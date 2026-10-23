@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-name: Portal CI
+name: OpenCity Frontend CI
 
 on:
   push:

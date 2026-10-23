@@ -5,8 +5,8 @@
 | Layer | Responsibility here |
 | --- | --- |
 | 1 — `dxos-core` | OIDC identity, gateway, tenant-scoped data and objects, workflow. It remains headless. |
-| 2 — `dxos-portal` | Citizen entry point, service catalog, personalized navigation, common UX and HPDI interfaces. |
-| 3 — `opencity-api` | Field report business rules today; future transport, education or agriculture apps can register without becoming part of Layer 1. |
+| 2 — `opencity-frontend` | Citizen entry point, service catalog, personalized navigation, common UX and HPDI interfaces. |
+| 3 — `opencity-backend` | Field report business rules today; future transport, education or agriculture apps can register without becoming part of Layer 1. |
 
 The catalog is a versioned manifest reviewed in Git. This is intentionally a deployment-time registration mechanism. It avoids giving an untrusted browser a public API for adding arbitrary links or JavaScript. A future operator-only runtime registry may be added with tenancy, review, audit and URL allowlisting.
 
@@ -37,7 +37,7 @@ The CI validator rejects duplicate IDs, unknown categories, missing metadata, a 
 
 1. Browser signs in with Keycloak's public `dxos-web` client and PKCE.
 2. Browser sends the access token to `/api/opencity/reports`. Gateway verifies signature, issuer, audience, client and tenant, then routes to the domain backend.
-3. `opencity-api` validates the field report and creates a `field-report` record in the core data API. The data API owns the record and its change history.
+3. `opencity-backend` validates the field report and creates a `field-report` record in the core data API. The data API owns the record and its change history.
 4. The backend optionally uploads one image as a tenant-scoped object linked to the record.
 5. The backend starts a `report-handling` workflow instance using the record ID as reference.
 6. An operator advances the state through the domain API; both the domain API and core workflow API check the operator role, and the workflow records transition history.
