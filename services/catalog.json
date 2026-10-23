@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "license": "Apache-2.0",
+  "categories": [
+    { "id": "feedback", "name": "Phản ánh, kiến nghị", "icon": "MessagesSquare" },
+    { "id": "public-service", "name": "Dịch vụ công", "icon": "Landmark" },
+    { "id": "government", "name": "Chính quyền và đoàn thể", "icon": "Building2" },
+    { "id": "news", "name": "Tin tức, cảnh báo", "icon": "Megaphone" },
+    { "id": "transport", "name": "Giao thông", "icon": "BusFront" },
+    { "id": "health", "name": "Y tế", "icon": "HeartPulse" },
+    { "id": "community", "name": "Tương tác cộng đồng", "icon": "UsersRound" },
+    { "id": "education", "name": "Giáo dục", "icon": "GraduationCap" },
+    { "id": "planning", "name": "Quy hoạch", "icon": "Map" },
+    { "id": "tourism", "name": "Du lịch", "icon": "Compass" },
+    { "id": "agriculture", "name": "Nông nghiệp", "icon": "Sprout" },
+    { "id": "utilities", "name": "Tiện ích khác", "icon": "LayoutGrid" }
+  ],
+  "services": [
+    { "id": "field-reports", "category": "feedback", "name": "Phản ánh hiện trường", "description": "Gửi phản ánh kèm ảnh và vị trí; theo dõi quá trình xử lý.", "icon": "MapPin", "kind": "native", "status": "available", "route": "/reports" },
+    { "id": "administrative-feedback", "category": "feedback", "name": "Phản ánh thủ tục hành chính", "description": "Góp ý về quy trình và chất lượng phục vụ.", "icon": "FileWarning", "kind": "native", "status": "planned" },
+    { "id": "citizen-appointment", "category": "feedback", "name": "Đăng ký tiếp công dân", "description": "Đặt lịch và theo dõi buổi tiếp công dân.", "icon": "CalendarDays", "kind": "native", "status": "planned" },
+    { "id": "business-feedback", "category": "feedback", "name": "Doanh nghiệp kiến nghị", "description": "Kênh kiến nghị dành cho doanh nghiệp.", "icon": "BriefcaseBusiness", "kind": "native", "status": "planned" },
+    { "id": "report-map", "category": "feedback", "name": "Bản đồ phản ánh", "description": "Theo dõi phản ánh theo khu vực và trạng thái.", "icon": "MapPinned", "kind": "native", "status": "planned" },
+
+    { "id": "public-services", "category": "public-service", "name": "Dịch vụ công", "description": "Cổng truy cập các thủ tục trực tuyến.", "icon": "Landmark", "kind": "connector", "status": "needs-integration" },
+    { "id": "service-booking", "category": "public-service", "name": "Đặt lịch thực hiện DVC", "description": "Đăng ký khung giờ làm thủ tục.", "icon": "CalendarCheck", "kind": "connector", "status": "needs-integration" },
+    { "id": "service-locations", "category": "public-service", "name": "Địa điểm thực hiện DVC", "description": "Tìm điểm tiếp nhận dịch vụ công.", "icon": "MapPinHouse", "kind": "connector", "status": "needs-integration" },
+    { "id": "document-wallet", "category": "public-service", "name": "Ví giấy tờ", "description": "Truy cập giấy tờ số khi có nguồn dữ liệu hợp lệ.", "icon": "FolderOpen", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "party-news", "category": "government", "name": "Thông tin Đảng bộ", "description": "Kênh thông tin của cơ quan liên quan.", "icon": "Newspaper", "kind": "link", "status": "needs-integration" },
+    { "id": "party-member-book", "category": "government", "name": "Sổ tay Đảng viên", "description": "Điểm truy cập ứng dụng chuyên ngành.", "icon": "BookOpen", "kind": "link", "status": "needs-integration" },
+    { "id": "voter-feedback", "category": "government", "name": "Kiến nghị cử tri", "description": "Tiếp nhận và theo dõi kiến nghị cử tri.", "icon": "MessageCircle", "kind": "connector", "status": "needs-integration" },
+    { "id": "council-activity", "category": "government", "name": "Hoạt động HĐND", "description": "Thông tin hoạt động hội đồng nhân dân.", "icon": "Landmark", "kind": "link", "status": "needs-integration" },
+    { "id": "public-safety", "category": "government", "name": "An ninh trật tự", "description": "Điểm kết nối dịch vụ an ninh trật tự.", "icon": "ShieldCheck", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "official-news", "category": "news", "name": "Tin tức", "description": "Bản tin từ các nguồn đã được cấu hình.", "icon": "Newspaper", "kind": "native", "status": "planned" },
+    { "id": "communications", "category": "news", "name": "Thông tin truyền thông", "description": "Thông báo và chiến dịch truyền thông.", "icon": "Megaphone", "kind": "native", "status": "planned" },
+    { "id": "warnings", "category": "news", "name": "Thông tin cảnh báo", "description": "Cảnh báo theo khu vực và chủ đề.", "icon": "TriangleAlert", "kind": "native", "status": "planned" },
+    { "id": "fraud-alerts", "category": "news", "name": "Cảnh báo thủ đoạn tội phạm", "description": "Nội dung cảnh báo từ cơ quan có thẩm quyền.", "icon": "ShieldAlert", "kind": "connector", "status": "needs-integration" },
+    { "id": "social-credit", "category": "news", "name": "Thông tin tín dụng chính sách", "description": "Thông tin chương trình tín dụng chính sách.", "icon": "BadgeInfo", "kind": "link", "status": "needs-integration" },
+    { "id": "ward-map", "category": "news", "name": "Bản đồ xã/phường", "description": "Tra cứu đơn vị hành chính và khu vực.", "icon": "Map", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "traffic-cameras", "category": "transport", "name": "Camera giao thông", "description": "Nguồn camera được cấp quyền chia sẻ.", "icon": "Camera", "kind": "connector", "status": "needs-integration" },
+    { "id": "traffic-violations", "category": "transport", "name": "Thông báo vi phạm giao thông", "description": "Tra cứu từ hệ thống có thẩm quyền.", "icon": "FileWarning", "kind": "connector", "status": "needs-integration" },
+    { "id": "bus-pass", "category": "transport", "name": "Đăng ký vé tháng xe buýt", "description": "Điểm kết nối dịch vụ vé tháng.", "icon": "Ticket", "kind": "connector", "status": "needs-integration" },
+    { "id": "find-bus", "category": "transport", "name": "Tìm buýt", "description": "Tra cứu tuyến và trạm xe buýt.", "icon": "BusFront", "kind": "connector", "status": "needs-integration" },
+    { "id": "airport-bus", "category": "transport", "name": "Vé xe buýt sân bay", "description": "Điểm kết nối đặt vé chuyên tuyến.", "icon": "Plane", "kind": "connector", "status": "needs-integration" },
+    { "id": "bus-routes", "category": "transport", "name": "Tra cứu tuyến xe", "description": "Tìm kiếm lộ trình giao thông công cộng.", "icon": "Route", "kind": "connector", "status": "needs-integration" },
+    { "id": "parking", "category": "transport", "name": "Tra cứu điểm đỗ", "description": "Tìm bãi và điểm đỗ xe.", "icon": "ParkingCircle", "kind": "connector", "status": "needs-integration" },
+    { "id": "traffic-info", "category": "transport", "name": "Thông tin giao thông", "description": "Tin tức và tình trạng giao thông.", "icon": "TrafficCone", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "health-record", "category": "health", "name": "Sổ sức khỏe điện tử", "description": "Kết nối hồ sơ sức khỏe khi được cấp quyền.", "icon": "ClipboardPlus", "kind": "connector", "status": "needs-integration" },
+    { "id": "medical-info", "category": "health", "name": "Thông tin khám chữa bệnh", "description": "Tra cứu thông tin dịch vụ y tế.", "icon": "HeartPulse", "kind": "connector", "status": "needs-integration" },
+    { "id": "health-facilities", "category": "health", "name": "Cơ sở y tế", "description": "Danh mục và bản đồ cơ sở y tế.", "icon": "Hospital", "kind": "connector", "status": "needs-integration" },
+    { "id": "insurance", "category": "health", "name": "Bảo hiểm xã hội", "description": "Điểm truy cập dịch vụ bảo hiểm xã hội.", "icon": "HeartHandshake", "kind": "link", "status": "needs-integration" },
+    { "id": "pharmacies", "category": "health", "name": "Cơ sở dược", "description": "Tra cứu cơ sở dược.", "icon": "Pill", "kind": "connector", "status": "needs-integration" },
+    { "id": "health-portal", "category": "health", "name": "Cổng sức khỏe", "description": "Thông tin sức khỏe từ đơn vị cung cấp.", "icon": "Globe", "kind": "link", "status": "needs-integration" },
+
+    { "id": "community-groups", "category": "community", "name": "Nhóm cộng đồng", "description": "Không gian tương tác cho các nhóm địa phương.", "icon": "UsersRound", "kind": "native", "status": "planned" },
+    { "id": "social-feedback", "category": "community", "name": "Góp ý, phản biện xã hội", "description": "Thu nhận ý kiến theo từng chủ đề.", "icon": "MessagesSquare", "kind": "native", "status": "planned" },
+    { "id": "digital-ward", "category": "community", "name": "Xã/phường số", "description": "Trang thông tin và dịch vụ cấp cơ sở.", "icon": "House", "kind": "native", "status": "planned" },
+    { "id": "front-organizations", "category": "community", "name": "Mặt trận và đoàn thể", "description": "Mặt trận, công đoàn, phụ nữ, nông dân, cựu chiến binh và thanh niên.", "icon": "HandHeart", "kind": "link", "status": "needs-integration" },
+    { "id": "policy-registration", "category": "community", "name": "Đăng ký chương trình", "description": "Điểm đăng ký các chương trình công cộng.", "icon": "ClipboardCheck", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "schools", "category": "education", "name": "Trường học", "description": "Tra cứu cơ sở giáo dục.", "icon": "School", "kind": "connector", "status": "needs-integration" },
+    { "id": "school-verification", "category": "education", "name": "Xác thực trường học", "description": "Điểm truy cập công cụ xác thực chuyên ngành.", "icon": "BadgeCheck", "kind": "link", "status": "needs-integration" },
+    { "id": "national-school", "category": "education", "name": "Trường học số", "description": "Điểm kết nối nền tảng trường học số.", "icon": "BookOpenCheck", "kind": "link", "status": "needs-integration" },
+    { "id": "enrollment", "category": "education", "name": "Tuyển sinh đầu cấp", "description": "Tra cứu và đăng ký tuyển sinh.", "icon": "GraduationCap", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "land-use", "category": "planning", "name": "Quy hoạch sử dụng đất", "description": "Tra cứu lớp dữ liệu quy hoạch được công bố.", "icon": "MapPinned", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "tourism-map", "category": "tourism", "name": "Bản đồ du lịch", "description": "Khám phá điểm đến và hành trình.", "icon": "Map", "kind": "connector", "status": "needs-integration" },
+    { "id": "heritage-map", "category": "tourism", "name": "Bản đồ di tích", "description": "Tra cứu di tích lịch sử, văn hóa.", "icon": "Castle", "kind": "connector", "status": "needs-integration" },
+    { "id": "tourism-app", "category": "tourism", "name": "Ứng dụng du lịch", "description": "Điểm truy cập hệ sinh thái du lịch.", "icon": "Compass", "kind": "link", "status": "needs-integration" },
+
+    { "id": "ocop-map", "category": "agriculture", "name": "Bản đồ OCOP", "description": "Khám phá sản phẩm OCOP theo địa bàn.", "icon": "MapPin", "kind": "connector", "status": "needs-integration" },
+    { "id": "craft-villages", "category": "agriculture", "name": "Làng nghề", "description": "Thông tin làng nghề và sản phẩm.", "icon": "Store", "kind": "connector", "status": "needs-integration" },
+    { "id": "traceability", "category": "agriculture", "name": "Truy xuất nguồn gốc", "description": "Tra cứu nguồn gốc sản phẩm khi có nguồn dữ liệu.", "icon": "ScanQrCode", "kind": "connector", "status": "needs-integration" },
+
+    { "id": "fire-safety", "category": "utilities", "name": "Tư vấn an toàn PCCC", "description": "Thông tin và hướng dẫn an toàn.", "icon": "Flame", "kind": "link", "status": "needs-integration" },
+    { "id": "investment-map", "category": "utilities", "name": "Bản đồ đầu tư", "description": "Tra cứu các điểm và dự án đầu tư.", "icon": "MapPinned", "kind": "connector", "status": "needs-integration" },
+    { "id": "loyalty", "category": "utilities", "name": "Điểm thưởng", "description": "Điểm kết nối chương trình ưu đãi.", "icon": "Gift", "kind": "connector", "status": "needs-integration" },
+    { "id": "air-quality", "category": "utilities", "name": "Chất lượng không khí", "description": "Dữ liệu môi trường theo khu vực.", "icon": "Wind", "kind": "connector", "status": "needs-integration" },
+    { "id": "hotlines", "category": "utilities", "name": "Danh bạ đường dây nóng", "description": "Tra cứu các kênh hỗ trợ.", "icon": "PhoneCall", "kind": "native", "status": "planned" },
+    { "id": "payments", "category": "utilities", "name": "Tiện ích thanh toán", "description": "Kết nối các nhà cung cấp thanh toán.", "icon": "Wallet", "kind": "connector", "status": "needs-integration" },
+    { "id": "media", "category": "utilities", "name": "Truyền hình", "description": "Điểm truy cập kênh nội dung số.", "icon": "Tv", "kind": "link", "status": "needs-integration" },
+    { "id": "digital-market", "category": "utilities", "name": "Chợ chuyển đổi số", "description": "Danh mục giải pháp số.", "icon": "ShoppingBag", "kind": "link", "status": "needs-integration" },
+    { "id": "technology-market", "category": "utilities", "name": "Sàn giao dịch công nghệ", "description": "Điểm truy cập thị trường công nghệ.", "icon": "Lightbulb", "kind": "link", "status": "needs-integration" },
+    { "id": "surveys", "category": "utilities", "name": "Khảo sát ý kiến", "description": "Thu thập phản hồi theo từng chiến dịch.", "icon": "ListChecks", "kind": "native", "status": "planned" }
+  ]
+}

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+name: Portal CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check:catalog
+      - run: npm run check:licenses
+      - run: npm run build
