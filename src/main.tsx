@@ -9,19 +9,26 @@ import { ReportsPage } from './pages/ReportsPage';
 import { AuthCallback } from './pages/AuthCallback';
 import './style.css';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route element={<Shell />}>
-            <Route path="/" element={<CatalogPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="*" element={<CatalogPage />} />
-          </Route>
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
-);
+// OIDC state is stored per origin. Use the one origin registered in Keycloak.
+if (window.location.hostname === '127.0.0.1' && window.location.port === '3000') {
+  const canonicalUrl = new URL(window.location.href);
+  canonicalUrl.hostname = 'localhost';
+  window.location.replace(canonicalUrl.href);
+} else {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route element={<Shell />}>
+              <Route path="/" element={<CatalogPage />} />
+              <Route path="/reports" element={<ReportsPage />} />
+              <Route path="*" element={<CatalogPage />} />
+            </Route>
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+}
