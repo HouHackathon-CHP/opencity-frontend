@@ -6,6 +6,7 @@ import { AuthProvider } from './components/AuthProvider';
 import { Shell } from './components/Shell';
 import { CatalogPage } from './pages/CatalogPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { SurveysPage } from './pages/SurveysPage';
 import { AuthCallback } from './pages/AuthCallback';
 import './style.css';
 
@@ -24,6 +25,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
             <Route element={<Shell />}>
               <Route path="/" element={<CatalogPage />} />
               <Route path="/reports" element={<ReportsPage />} />
+              <Route path="/surveys" element={<SurveysPage />} />
               <Route path="*" element={<CatalogPage />} />
             </Route>
           </Routes>

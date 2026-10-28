@@ -6,7 +6,7 @@
 | --- | --- |
 | 1 — `dxos-core` | OIDC identity, gateway, tenant-scoped data and objects, workflow. It remains headless. |
 | 2 — `opencity-frontend` | Citizen entry point, service catalog, personalized navigation, common UX and HPDI interfaces. |
-| 3 — `opencity-backend` | Field report business rules today; future transport, education or agriculture apps can register without becoming part of Layer 1. |
+| 3 — `opencity-backend` | Field report, bulletin and survey business rules; future transport, education or agriculture apps can register without becoming part of Layer 1. |
 
 The catalog is a versioned manifest reviewed in Git. This is intentionally a deployment-time registration mechanism. It avoids giving an untrusted browser a public API for adding arbitrary links or JavaScript. A future operator-only runtime registry may be added with tenancy, review, audit and URL allowlisting.
 
@@ -44,6 +44,10 @@ The CI validator rejects duplicate IDs, unknown categories, missing metadata, a 
 
 This path proves actual use of every required Layer 1 capability. It is not an official complaint submission channel. The citizen sees only their own records; operators can see their tenant's records according to the current core policy. Public reports, cross-unit routing, notifications, moderation, duplicate handling, anti-malware scanning and publication consent are subsequent work.
 
+## Survey path
+
+An operator publishes a survey through `/api/opencity/surveys`. The backend checks the operator role and stores the survey and its options under the caller's tenant. A citizen can submit one option once; a database uniqueness constraint prevents duplicate answers. Results are visible to the respondent, to operators, or after closure. The mobile app and web portal both use this domain API through the gateway. The smoke data is marked `[DEMO]` and is not an official public consultation.
+
 ## Next capability work
 
-The next common services are a tenant-scoped announcement feed, notifications/task inbox, WebGIS report view, service registry administration and shared search. These map to H, P and D. AI classification and duplicate suggestions can follow once the operational data and review flow exist; AI suggestions must remain subject to human review.
+The next common services are notifications/task inbox, WebGIS report view, service registry administration and shared search. These map to H, P and D. AI classification and duplicate suggestions can follow once the operational data and review flow exist; AI suggestions must remain subject to human review.

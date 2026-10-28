@@ -19,6 +19,15 @@ export type Report = {
   warnings?: string[];
 };
 
+export type SurveySummary = {
+  id: string; title: string; description: string; status: 'open' | 'closed';
+  created_at: string; closed_at: string | null; my_option_id: string | null;
+};
+export type SurveyDetail = SurveySummary & {
+  options: { id: string; label: string; votes: number | null }[];
+  total_responses: number | null;
+};
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }

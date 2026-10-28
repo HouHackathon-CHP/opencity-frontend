@@ -86,6 +86,6 @@
     { "id": "media", "category": "utilities", "name": "Truyền hình", "description": "Điểm truy cập kênh nội dung số.", "icon": "Tv", "kind": "link", "status": "needs-integration" },
     { "id": "digital-market", "category": "utilities", "name": "Chợ chuyển đổi số", "description": "Danh mục giải pháp số.", "icon": "ShoppingBag", "kind": "link", "status": "needs-integration" },
     { "id": "technology-market", "category": "utilities", "name": "Sàn giao dịch công nghệ", "description": "Điểm truy cập thị trường công nghệ.", "icon": "Lightbulb", "kind": "link", "status": "needs-integration" },
-    { "id": "surveys", "category": "utilities", "name": "Khảo sát ý kiến", "description": "Thu thập phản hồi theo từng chiến dịch.", "icon": "ListChecks", "kind": "native", "status": "planned" }
+    { "id": "surveys", "category": "utilities", "name": "Khảo sát ý kiến", "description": "Bình chọn ưu tiên trong các khảo sát do đơn vị vận hành công bố.", "icon": "ListChecks", "kind": "native", "status": "available", "route": "/surveys" }
   ]
 }
