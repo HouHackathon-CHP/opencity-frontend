@@ -33,9 +33,9 @@
     { "id": "council-activity", "category": "government", "name": "Hoạt động HĐND", "description": "Thông tin hoạt động hội đồng nhân dân.", "icon": "Landmark", "kind": "link", "status": "needs-integration" },
     { "id": "public-safety", "category": "government", "name": "An ninh trật tự", "description": "Điểm kết nối dịch vụ an ninh trật tự.", "icon": "ShieldCheck", "kind": "connector", "status": "needs-integration" },
 
-    { "id": "official-news", "category": "news", "name": "Tin tức", "description": "Bản tin từ các nguồn đã được cấu hình.", "icon": "Newspaper", "kind": "native", "status": "planned" },
+    { "id": "official-news", "category": "news", "name": "Tin tức", "description": "Bản tin do đơn vị vận hành OpenCity đăng tải.", "icon": "Newspaper", "kind": "native", "status": "available", "route": "/bulletins" },
     { "id": "communications", "category": "news", "name": "Thông tin truyền thông", "description": "Thông báo và chiến dịch truyền thông.", "icon": "Megaphone", "kind": "native", "status": "planned" },
-    { "id": "warnings", "category": "news", "name": "Thông tin cảnh báo", "description": "Cảnh báo theo khu vực và chủ đề.", "icon": "TriangleAlert", "kind": "native", "status": "planned" },
+    { "id": "warnings", "category": "news", "name": "Thông tin cảnh báo", "description": "Cảnh báo theo khu vực do đơn vị vận hành đăng tải.", "icon": "TriangleAlert", "kind": "native", "status": "available", "route": "/bulletins" },
     { "id": "fraud-alerts", "category": "news", "name": "Cảnh báo thủ đoạn tội phạm", "description": "Nội dung cảnh báo từ cơ quan có thẩm quyền.", "icon": "ShieldAlert", "kind": "connector", "status": "needs-integration" },
     { "id": "social-credit", "category": "news", "name": "Thông tin tín dụng chính sách", "description": "Thông tin chương trình tín dụng chính sách.", "icon": "BadgeInfo", "kind": "link", "status": "needs-integration" },
     { "id": "ward-map", "category": "news", "name": "Bản đồ xã/phường", "description": "Tra cứu đơn vị hành chính và khu vực.", "icon": "Map", "kind": "connector", "status": "needs-integration" },

@@ -48,6 +48,10 @@ This path proves actual use of every required Layer 1 capability. It is not an o
 
 An operator publishes a survey through `/api/opencity/surveys`. The backend checks the operator role and stores the survey and its options under the caller's tenant. A citizen can submit one option once; a database uniqueness constraint prevents duplicate answers. Results are visible to the respondent, to operators, or after closure. The mobile app and web portal both use this domain API through the gateway. The smoke data is marked `[DEMO]` and is not an official public consultation.
 
+## News and alert path
+
+An operator publishes news or an alert through `/api/opencity/bulletins` from the web portal. The backend restricts creation to operators and scopes reading to the caller's tenant. The citizen mobile app shows the feed and places geocoded alerts on its map. These are operator-entered messages, not an imported or verified government feed; demonstration entries are marked `[DEMO]`.
+
 ## Next capability work
 
 The next common services are notifications/task inbox, WebGIS report view, service registry administration and shared search. These map to H, P and D. AI classification and duplicate suggestions can follow once the operational data and review flow exist; AI suggestions must remain subject to human review.

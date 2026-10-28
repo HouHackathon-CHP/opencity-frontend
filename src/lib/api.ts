@@ -27,6 +27,10 @@ export type SurveyDetail = SurveySummary & {
   options: { id: string; label: string; votes: number | null }[];
   total_responses: number | null;
 };
+export type Bulletin = {
+  id: string; category: 'news' | 'alert'; title: string; summary: string; body: string;
+  area: string | null; latitude: number | null; longitude: number | null; published_at: string;
+};
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }

@@ -8,6 +8,7 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 - Search without Vietnamese diacritics, category filters, local favorites, responsive layout and service details.
 - A signed-in citizen creates a field report with optional image and browser location through `opencity-backend`; an operator can move it through `submitted → triaged → assigned → resolved`; both can see allowed records and workflow history.
 - Operators can publish and close tenant-scoped, single-choice surveys. Each account can answer once; the web portal and citizen mobile app show results after an answer or after closure.
+- Operators can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
 - OIDC Authorization Code + PKCE sign-in through the existing `dxos-web` Keycloak client. The browser calls only the OpenCity routes at the DX-OS gateway; it does not orchestrate generic data/workflow APIs. No mock login or privileged client secret is stored in the portal.
 
 The other catalog tiles are **not** presented as working services. Integrations with public service, health, transport, payments or official sources require an approved provider URL/API and data access agreement before enabling.
