@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { rolesOf } from '../lib/auth';
+import { canManage } from '../lib/permissions';
 import { request, type SurveyDetail, type SurveySummary } from '../lib/api';
 
 const formatDate = (value: string) => {
@@ -38,7 +38,7 @@ const formatDate = (value: string) => {
 export function SurveysPage() {
   const { user, loading: authLoading, login } = useAuth();
   const token = user?.access_token || '';
-  const operator = rolesOf(user).some((role) => role === 'operator' || role === 'admin');
+  const operator = canManage(user, 'surveys');
 
   const [items, setItems] = useState<SurveySummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);

@@ -40,17 +40,17 @@ The CI validator rejects duplicate IDs, unknown categories, missing metadata, a 
 3. `opencity-backend` validates the field report and creates a `field-report` record in the core data API. The data API owns the record and its change history.
 4. The backend optionally uploads one image as a tenant-scoped object linked to the record.
 5. The backend starts a `report-handling` workflow instance using the record ID as reference.
-6. An operator advances the state through the domain API; both the domain API and core workflow API check the operator role, and the workflow records transition history.
+6. A `reports_operator` advances the state through the domain API. The backend checks this feature role and delegates to the core workflow using its internal gateway context; the workflow records transition history.
 
-This path proves actual use of every required Layer 1 capability. It is not an official complaint submission channel. The citizen sees only their own records; operators can see their tenant's records according to the current core policy. Public reports, cross-unit routing, notifications, moderation, duplicate handling, anti-malware scanning and publication consent are subsequent work.
+This path proves actual use of every required Layer 1 capability. It is not an official complaint submission channel. The citizen sees only their own records; `reports_operator` can see reports in their tenant. Browser and mobile tokens cannot call generic core data/workflow routes directly. Public reports, cross-unit routing, notifications, moderation, duplicate handling, anti-malware scanning and publication consent are subsequent work.
 
 ## Survey path
 
-An operator publishes a survey through `/api/opencity/surveys`. The backend checks the operator role and stores the survey and its options under the caller's tenant. A citizen can submit one option once; a database uniqueness constraint prevents duplicate answers. Results are visible to the respondent, to operators, or after closure. The mobile app and web portal both use this domain API through the gateway. The smoke data is marked `[DEMO]` and is not an official public consultation.
+A `surveys_operator` publishes a survey through `/api/opencity/surveys`. The backend checks this feature role and stores the survey and its options under the caller's tenant. A citizen can submit one option once; a database uniqueness constraint prevents duplicate answers. Results are visible to the respondent, to survey operators, or after closure. The mobile app and web portal both use this domain API through the gateway. The smoke data is marked `[DEMO]` and is not an official public consultation.
 
 ## News and alert path
 
-An operator publishes news or an alert through `/api/opencity/bulletins` from the web portal. The backend restricts creation to operators and scopes reading to the caller's tenant. The citizen mobile app shows the feed and places geocoded alerts on its map. These are operator-entered messages, not an imported or verified government feed; demonstration entries are marked `[DEMO]`.
+A `bulletins_operator` publishes news or an alert through `/api/opencity/bulletins` from the web portal. The backend restricts creation to this feature role and scopes reading to the caller's tenant. The citizen mobile app shows the feed and places geocoded alerts on its map. These are staff-entered messages, not an imported or verified government feed; demonstration entries are marked `[DEMO]`.
 
 ## Next capability work
 

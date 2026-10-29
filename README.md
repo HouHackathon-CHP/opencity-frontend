@@ -6,9 +6,10 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 
 - A file-defined service catalog covering **60 service concepts in 12 categories**, transcribed and grouped from the screenshots supplied for the project. Each entry states whether it is available, planned, or awaiting a provider integration.
 - Search without Vietnamese diacritics, category filters, local favorites, responsive layout and service details.
-- A signed-in citizen creates a field report with optional image and browser location through `opencity-backend`; an operator can move it through `submitted → triaged → assigned → resolved`; both can see allowed records and workflow history.
-- Operators can publish and close tenant-scoped, single-choice surveys. Each account can answer once; the web portal and citizen mobile app show results after an answer or after closure.
-- Operators can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
+- A signed-in citizen creates a field report with optional image and browser location through `opencity-backend`; `reports_operator` can move it through `submitted → triaged → assigned → resolved`; both can see allowed records and workflow history.
+- `surveys_operator` can publish and close tenant-scoped, single-choice surveys. Each account can answer once; the web portal and citizen mobile app show results after an answer or after closure.
+- `bulletins_operator` can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
+- Staff accounts see only their granted management pages. Each page is loaded on demand. The backend enforces the same permissions on every management action.
 - OIDC Authorization Code + PKCE sign-in through the existing `dxos-web` Keycloak client. The browser calls only the OpenCity routes at the DX-OS gateway; it does not orchestrate generic data/workflow APIs. No mock login or privileged client secret is stored in the portal.
 
 The other catalog tiles are **not** presented as working services. Integrations with public service, health, transport, payments or official sources require an approved provider URL/API and data access agreement before enabling.
@@ -27,6 +28,8 @@ npm run dev
 ```
 
 Open <http://localhost:3000>. Use `localhost` for browser sign-in: it is the local origin registered with Keycloak and allowed by the gateway. Visits to `http://127.0.0.1:3000` are redirected there before OIDC begins. The catalog renders without the backend. Authentication and reporting require Keycloak at `http://localhost:8081`, gateway at `http://localhost:8000` and `opencity-backend` on the Compose network. For production, configure a HTTPS origin in this portal, Keycloak's `dxos-web` redirect/web origins, and gateway CORS together.
+
+For role testing, run `python scripts/smoke_app.py` in `opencity-backend`, then sign in as `dxos-reports`, `dxos-bulletins`, or `dxos-surveys` using the local `DEMO_OPERATOR_PASSWORD` from `dxos-core/.env`. Each account sees only its assigned management page. Sign out and back in after changing roles in Keycloak so the browser receives a fresh access token.
 
 `npm run build` creates a static bundle under `dist/`. Business validation and orchestration live in the separate `opencity-backend` repository. Keep the Keycloak and gateway configuration on trusted origins before exposing the system.
 

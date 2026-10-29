@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { rolesOf } from '../lib/auth';
+import { canManage } from '../lib/permissions';
 import { downloadAttachment, reportStates, request, type Report } from '../lib/api';
 
 const types = ['Hạ tầng', 'Môi trường', 'Giao thông', 'Chiếu sáng', 'Cây xanh', 'Khác'];
@@ -147,7 +147,7 @@ function PhotoThumbnail({
 export function ReportsPage() {
   const { user, loading: authLoading, login } = useAuth();
   const token = user?.access_token || '';
-  const isOperator = rolesOf(user).some((role) => role === 'operator' || role === 'admin');
+  const isOperator = canManage(user, 'reports');
 
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);

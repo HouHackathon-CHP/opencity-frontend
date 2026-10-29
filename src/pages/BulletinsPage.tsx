@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { rolesOf } from '../lib/auth';
+import { canManage } from '../lib/permissions';
 import { request, type Bulletin } from '../lib/api';
 
 const formatDate = (value: string) => {
@@ -35,7 +35,7 @@ const formatDate = (value: string) => {
 export function BulletinsPage() {
   const { user, loading: authLoading, login } = useAuth();
   const token = user?.access_token || '';
-  const operator = rolesOf(user).some((role) => role === 'operator' || role === 'admin');
+  const operator = canManage(user, 'bulletins');
 
   const [items, setItems] = useState<Bulletin[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);

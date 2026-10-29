@@ -2,12 +2,14 @@
 import { ArrowRight, ClipboardList, ExternalLink, Globe, LayoutGrid, LogIn, LogOut, MapPin, Newspaper, Shield, ShieldCheck, UserCheck } from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
-import { displayName, rolesOf } from '../lib/auth';
+import { displayName } from '../lib/auth';
+import { canOpenFeature, managementOf, type Feature } from '../lib/permissions';
 import { Logo } from './Logo';
 
 export function Shell() {
   const { user, loading, login, logout } = useAuth();
-  const operator = rolesOf(user).some((role) => role === 'operator' || role === 'admin');
+  const operator = managementOf(user).length > 0;
+  const canSee = (feature: Feature) => !loading && canOpenFeature(user, feature);
 
   return (
     <div className="app-shell">
@@ -47,20 +49,20 @@ export function Shell() {
           <nav className="desktop-nav" aria-label="Điều hướng chính">
             <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <LayoutGrid size={18} />
-              <span>Dịch vụ</span>
+              <span>{operator ? 'Vận hành' : 'Dịch vụ'}</span>
             </NavLink>
-            <NavLink to="/reports" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+            {canSee('reports') && <NavLink to="/reports" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <MapPin size={18} />
               <span>Phản ánh hiện trường</span>
-            </NavLink>
-            <NavLink to="/surveys" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+            </NavLink>}
+            {canSee('surveys') && <NavLink to="/surveys" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <ClipboardList size={18} />
               <span>Khảo sát ý kiến</span>
-            </NavLink>
-            <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+            </NavLink>}
+            {canSee('bulletins') && <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <Newspaper size={18} />
               <span>Tin & Cảnh báo</span>
-            </NavLink>
+            </NavLink>}
           </nav>
 
           {/* User Account / Login Area */}
@@ -77,7 +79,7 @@ export function Shell() {
                   </div>
                   <div className="user-meta">
                     <strong className="user-name">{displayName(user)}</strong>
-                    <span className="user-subtext">{operator ? 'Ban điều hành đô thị' : 'Tài khoản DX-OS'}</span>
+                    <span className="user-subtext">{operator ? 'Nghiệp vụ được cấp quyền' : 'Tài khoản DX-OS'}</span>
                   </div>
                 </div>
                 <button
@@ -132,10 +134,10 @@ export function Shell() {
             <div className="footer-links-col">
               <h4>Kênh tương tác</h4>
               <ul>
-                <li><Link to="/reports">Phản ánh hiện trường</Link></li>
-                <li><Link to="/surveys">Khảo sát & Lấy ý kiến</Link></li>
-                <li><Link to="/bulletins">Bản tin & Cảnh báo khu vực</Link></li>
-                <li><Link to="/#danh-muc">Danh mục dịch vụ số</Link></li>
+                {canSee('reports') && <li><Link to="/reports">Phản ánh hiện trường</Link></li>}
+                {canSee('surveys') && <li><Link to="/surveys">Khảo sát & Lấy ý kiến</Link></li>}
+                {canSee('bulletins') && <li><Link to="/bulletins">Bản tin & Cảnh báo khu vực</Link></li>}
+                {!operator && <li><Link to="/#danh-muc">Danh mục dịch vụ số</Link></li>}
               </ul>
             </div>
 
@@ -174,20 +176,20 @@ export function Shell() {
       <nav className="mobile-nav" aria-label="Điều hướng di động">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <LayoutGrid size={20} />
-          <span>Dịch vụ</span>
+          <span>{operator ? 'Vận hành' : 'Dịch vụ'}</span>
         </NavLink>
-        <NavLink to="/reports" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+        {canSee('reports') && <NavLink to="/reports" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <MapPin size={20} />
           <span>Phản ánh</span>
-        </NavLink>
-        <NavLink to="/surveys" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+        </NavLink>}
+        {canSee('surveys') && <NavLink to="/surveys" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <ClipboardList size={20} />
           <span>Khảo sát</span>
-        </NavLink>
-        <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+        </NavLink>}
+        {canSee('bulletins') && <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <Newspaper size={20} />
           <span>Tin tức</span>
-        </NavLink>
+        </NavLink>}
       </nav>
     </div>
   );
