@@ -42,7 +42,7 @@ The CI validator rejects duplicate IDs, unknown categories, missing metadata, a 
 5. The backend starts a `report-handling` workflow instance using the record ID as reference.
 6. A `reports_operator` advances the state through the domain API. The backend checks this feature role and delegates to the core workflow using its internal gateway context; the workflow records transition history.
 
-This path proves actual use of every required Layer 1 capability. It is not an official complaint submission channel. The citizen sees only their own records; `reports_operator` can see reports in their tenant. Browser and mobile tokens cannot call generic core data/workflow routes directly. Public reports, cross-unit routing, notifications, moderation, duplicate handling, anti-malware scanning and publication consent are subsequent work.
+This path proves actual use of every required Layer 1 capability. It is not an official complaint submission channel. The citizen sees only their own records; `reports_operator` sees reports in their tenant routed to the `unit_id` in their token. Categories have a deterministic unit mapping in the backend. Browser and mobile tokens cannot call generic core data/workflow routes directly. Public reports, manual cross-unit reassignment, notifications, moderation, duplicate handling, anti-malware scanning and publication consent are subsequent work.
 
 ## Survey path
 

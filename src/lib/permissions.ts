@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import type { User } from 'oidc-client-ts';
-import { rolesOf } from './auth';
+import { rolesOf, unitOf } from './auth';
 
 export type Feature = 'reports' | 'bulletins' | 'surveys';
 const featureRoles: Record<Feature, string> = {
@@ -8,10 +8,12 @@ const featureRoles: Record<Feature, string> = {
   bulletins: 'bulletins_operator',
   surveys: 'surveys_operator',
 };
+const reportUnits = new Set(['infrastructure', 'environment', 'transport', 'intake']);
 
 export function canManage(user: User | null, feature: Feature): boolean {
   const roles = rolesOf(user);
-  return roles.includes('admin') || roles.includes(featureRoles[feature]);
+  return roles.includes('admin') || (roles.includes(featureRoles[feature]) &&
+    (feature !== 'reports' || reportUnits.has(unitOf(user) || '')));
 }
 
 export function managementOf(user: User | null): Feature[] {

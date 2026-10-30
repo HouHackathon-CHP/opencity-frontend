@@ -27,14 +27,21 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
+import { unitOf } from '../lib/auth';
 import { canManage } from '../lib/permissions';
 import { downloadAttachment, reportStates, request, type Report } from '../lib/api';
 
 const types = ['Hạ tầng', 'Môi trường', 'Giao thông', 'Chiếu sáng', 'Cây xanh', 'Khác'];
+const unitNames: Record<string, string> = {
+  infrastructure: 'Hạ tầng & chiếu sáng',
+  environment: 'Môi trường & cây xanh',
+  transport: 'Giao thông',
+  intake: 'Tiếp nhận chung',
+};
 
 const actions: Record<string, { key: string; text: string; nextState: string }> = {
   submitted: { key: 'triage', text: 'Tiếp nhận phản ánh', nextState: 'triaged' },
-  triaged: { key: 'assign', text: 'Chuyển đơn vị xử lý', nextState: 'assigned' },
+  triaged: { key: 'assign', text: 'Giao xử lý trong đơn vị', nextState: 'assigned' },
   assigned: { key: 'resolve', text: 'Xác nhận hoàn tất', nextState: 'resolved' },
 };
 
@@ -148,6 +155,7 @@ export function ReportsPage() {
   const { user, loading: authLoading, login } = useAuth();
   const token = user?.access_token || '';
   const isOperator = canManage(user, 'reports');
+  const unitName = unitNames[unitOf(user) || ''];
 
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -419,7 +427,7 @@ export function ReportsPage() {
               </div>
               <p className="panel-subtext">
                 {isOperator
-                  ? 'Theo dõi, phân loại và cập nhật tiến trình giải quyết cho các phản ánh trong đơn vị.'
+                  ? `Theo dõi và xử lý phản ánh thuộc ${unitName || 'mọi đơn vị trong tenant'}.`
                   : 'Chỉ bạn và cán bộ có thẩm quyền trong đơn vị mới xem được thông tin hồ sơ này.'}
               </p>
             </div>

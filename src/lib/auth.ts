@@ -14,12 +14,22 @@ export const userManager = new UserManager({
   automaticSilentRenew: false,
 });
 
-export function rolesOf(user: User | null): string[] {
-  if (!user?.access_token) return [];
+function accessClaims(user: User | null): Record<string, unknown> | null {
+  if (!user?.access_token) return null;
   try {
-    const payload = JSON.parse(atob(user.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    return Array.isArray(payload.realm_access?.roles) ? payload.realm_access.roles : [];
-  } catch { return []; }
+    return JSON.parse(atob(user.access_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch { return null; }
+}
+
+export function rolesOf(user: User | null): string[] {
+  const access = accessClaims(user)?.realm_access;
+  const roles = access && typeof access === 'object' && 'roles' in access ? access.roles : null;
+  return Array.isArray(roles) ? roles.filter((role): role is string => typeof role === 'string') : [];
+}
+
+export function unitOf(user: User | null): string | null {
+  const unit = accessClaims(user)?.unit_id;
+  return typeof unit === 'string' ? unit : null;
 }
 
 export function displayName(user: User | null): string {

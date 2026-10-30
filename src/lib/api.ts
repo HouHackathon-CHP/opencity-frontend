@@ -6,6 +6,7 @@ export type Report = {
   title: string;
   description: string;
   category: string;
+  unit_id: string;
   address: string;
   latitude: number | null;
   longitude: number | null;
