@@ -4,6 +4,7 @@ import { ArrowLeft, Clock3, ListFilter, MapPin, RefreshCw, TriangleAlert } from 
 import * as maplibregl from 'maplibre-gl';
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { canDispatch } from '../lib/permissions';
@@ -88,6 +89,7 @@ export function ReportsMapPage() {
   useEffect(() => {
     if (!mapElement.current) return;
     try {
+      maplibregl.setWorkerUrl(workerUrl);
       const map = new maplibregl.Map({
         container: mapElement.current,
         style: {
