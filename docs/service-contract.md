@@ -40,9 +40,9 @@ The CI validator rejects duplicate IDs, unknown categories, missing metadata, a 
 3. `opencity-backend` validates the field report and creates a `field-report` record in the core data API. The data API owns the record and its change history.
 4. The backend optionally uploads one image as a tenant-scoped object linked to the record.
 5. The backend starts a `report-handling` workflow instance using the record ID as reference.
-6. A `reports_operator` advances the state through the domain API. The backend checks this feature role and delegates to the core workflow using its internal gateway context; the workflow records transition history.
+6. A `reports_dispatcher` chooses the responsible unit, deadline and reason through the domain API. The backend advances the core workflow to `assigned` and saves routing/audit data in its persistent database. The assigned `reports_operator` accepts, posts public progress, requests transfer or resolves. The dispatcher can reassign or reject a transfer request. The citizen sees the merged workflow and routing history.
 
-This path proves actual use of every required Layer 1 capability. It is not an official complaint submission channel. The citizen sees only their own records; `reports_operator` sees reports in their tenant routed to the `unit_id` in their token. Categories have a deterministic unit mapping in the backend. Browser and mobile tokens cannot call generic core data/workflow routes directly. Public reports, manual cross-unit reassignment, notifications, moderation, duplicate handling, anti-malware scanning and publication consent are subsequent work.
+This path proves actual use of every required Layer 1 capability. It is not an official complaint submission channel. The citizen sees only their own records; the dispatcher sees tenant reports; a `reports_operator` sees only explicitly assigned reports for their `unit_id`. Categories suggest a unit but do not grant access. Browser and mobile tokens cannot call generic core data/workflow routes directly. Notifications, moderation, duplicate handling, anti-malware scanning and publication consent are subsequent work.
 
 ## Survey path
 

@@ -27,9 +27,9 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { unitOf } from '../lib/auth';
-import { canManage } from '../lib/permissions';
-import { downloadAttachment, reportStates, request, type Report } from '../lib/api';
+import { rolesOf, unitOf } from '../lib/auth';
+import { canDispatch, canManage } from '../lib/permissions';
+import { ApiError, downloadAttachment, reportStates, request, type Report } from '../lib/api';
 
 const types = ['Hạ tầng', 'Môi trường', 'Giao thông', 'Chiếu sáng', 'Cây xanh', 'Khác'];
 const unitNames: Record<string, string> = {
@@ -39,11 +39,20 @@ const unitNames: Record<string, string> = {
   intake: 'Tiếp nhận chung',
 };
 
-const actions: Record<string, { key: string; text: string; nextState: string }> = {
-  submitted: { key: 'triage', text: 'Tiếp nhận phản ánh', nextState: 'triaged' },
-  triaged: { key: 'assign', text: 'Giao xử lý trong đơn vị', nextState: 'assigned' },
-  assigned: { key: 'resolve', text: 'Xác nhận hoàn tất', nextState: 'resolved' },
+const routingActions: Record<string, string> = {
+  assigned: 'Đã phân công đơn vị', reassigned: 'Đã chuyển đơn vị',
+  accepted: 'Đơn vị đã nhận việc', transfer_requested: 'Đề nghị chuyển đơn vị',
+  transfer_rejected: 'Đã từ chối chuyển đơn vị', progress: 'Đã cập nhật tiến độ',
+  resolved: 'Đã hoàn tất xử lý',
 };
+
+function isOverdue(report: Report): boolean {
+  return Boolean(report.due_at && report.state !== 'resolved' && new Date(report.due_at).getTime() < Date.now());
+}
+
+function localDateTime(value: Date): string {
+  return new Date(value.getTime() - value.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
 
 function formatDate(value: string) {
   try {
@@ -155,6 +164,8 @@ export function ReportsPage() {
   const { user, loading: authLoading, login } = useAuth();
   const token = user?.access_token || '';
   const isOperator = canManage(user, 'reports');
+  const isDispatcher = canDispatch(user);
+  const roles = rolesOf(user);
   const unitName = unitNames[unitOf(user) || ''];
 
   const [reports, setReports] = useState<Report[]>([]);
@@ -165,10 +176,28 @@ export function ReportsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [dispatchUnit, setDispatchUnit] = useState('infrastructure');
+  const [dispatchDue, setDispatchDue] = useState('');
+  const [dispatchNote, setDispatchNote] = useState('');
+  const [transferUnit, setTransferUnit] = useState('environment');
+  const [transferReason, setTransferReason] = useState('');
+  const [progressNote, setProgressNote] = useState('');
+  const [rejectNote, setRejectNote] = useState('');
+
+  useEffect(() => {
+    if (!detail) return;
+    setDispatchUnit(detail.pending_unit || detail.assigned_unit || detail.unit_id);
+    setDispatchDue(localDateTime(new Date(Date.now() + 3 * 86400000)));
+    setDispatchNote('');
+    setTransferUnit(Object.keys(unitNames).find((unit) => unit !== detail.assigned_unit) || 'intake');
+    setTransferReason('');
+    setProgressNote('');
+    setRejectNote('');
+  }, [detail?.id]);
 
   // Search & filter
   const [searchQuery, setSearchQuery] = useState('');
-  const [stateFilter, setStateFilter] = useState<'all' | 'submitted' | 'triaged' | 'assigned' | 'resolved'>('all');
+  const [stateFilter, setStateFilter] = useState<'all' | 'submitted' | 'triaged' | 'assigned' | 'resolved' | 'overdue'>('all');
 
   // Form states
   const [title, setTitle] = useState('');
@@ -196,15 +225,14 @@ export function ReportsPage() {
     try {
       const data = await request<Report[]>('/api/opencity/reports', token);
       setReports(data);
-      if (data.length > 0 && !selectedId) {
-        setSelectedId(data[0].id);
-      }
+      setSelectedId((current) => current && data.some((item) => item.id === current)
+        ? current : data[0]?.id || null);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không thể tải dữ liệu từ OpenCity API.');
     } finally {
       setLoading(false);
     }
-  }, [token, selectedId]);
+  }, [token]);
 
   const loadDetail = useCallback(
     async (id: string) => {
@@ -213,10 +241,14 @@ export function ReportsPage() {
         const item = await request<Report>(`/api/opencity/reports/${encodeURIComponent(id)}`, token);
         setDetail(item);
       } catch (cause) {
+        if (cause instanceof ApiError && cause.status === 404) {
+          setDetail(null);
+          void refresh();
+        }
         setError(cause instanceof Error ? cause.message : 'Không thể tải chi tiết phản ánh.');
       }
     },
-    [token],
+    [token, refresh],
   );
 
   useEffect(() => {
@@ -226,6 +258,8 @@ export function ReportsPage() {
   useEffect(() => {
     if (selectedId) {
       void loadDetail(selectedId);
+    } else {
+      setDetail(null);
     }
   }, [selectedId, loadDetail]);
 
@@ -283,25 +317,47 @@ export function ReportsPage() {
     }
   }
 
-  // Officer take action
-  async function takeAction(action: string) {
-    if (!detail || !token || busy) return;
+  async function updateReport(path: string, message: string, body?: object): Promise<boolean> {
+    if (!detail || !token || busy) return false;
     setBusy(true);
     setError('');
     setNotice('');
     try {
-      await request(
-        `/api/opencity/reports/${encodeURIComponent(detail.id)}/actions/${action}`,
-        token,
-        { method: 'POST' },
-      );
-      setNotice('Trạng thái quy trình đã được cập nhật và ghi nhận vào lịch sử kiểm toán.');
+      await request(`/api/opencity/reports/${encodeURIComponent(detail.id)}${path}`, token, {
+        method: 'POST',
+        ...(body ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {}),
+      });
+      setNotice(message);
       await refresh();
       await loadDetail(detail.id);
+      return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không thể cập nhật quy trình.');
+      return false;
     } finally {
       setBusy(false);
+    }
+  }
+
+  function submitDispatch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!dispatchDue) return;
+    void updateReport('/dispatch', 'Đã phân công hồ sơ và lưu hạn xử lý.', {
+      unit_id: dispatchUnit, due_at: new Date(dispatchDue).toISOString(), note: dispatchNote.trim(),
+    });
+  }
+
+  function submitTransfer(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void updateReport('/transfer-request', 'Đã gửi đề nghị chuyển đơn vị.', {
+      unit_id: transferUnit, reason: transferReason.trim(),
+    });
+  }
+
+  async function submitProgress(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (await updateReport('/progress', 'Đã cập nhật tiến độ xử lý.', { note: progressNote.trim() })) {
+      setProgressNote('');
     }
   }
 
@@ -345,7 +401,8 @@ export function ReportsPage() {
   // Filtered reports
   const filteredReports = useMemo(() => {
     return reports.filter((item) => {
-      if (stateFilter !== 'all' && item.state !== stateFilter) return false;
+      if (stateFilter === 'overdue' && !isOverdue(item)) return false;
+      if (stateFilter !== 'all' && stateFilter !== 'overdue' && item.state !== stateFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         return (
@@ -358,6 +415,10 @@ export function ReportsPage() {
       return true;
     });
   }, [reports, stateFilter, searchQuery]);
+  const isHandler = Boolean(detail?.assigned_unit && (
+    roles.includes('admin') ||
+    (roles.includes('reports_operator') && unitOf(user) === detail.assigned_unit)
+  ));
 
   return (
     <div className="reports-page page-width">
@@ -422,7 +483,7 @@ export function ReportsPage() {
                 <h2>{isOperator ? 'Bàn Xử Lý Phản Ánh Đô Thị' : 'Hồ Sơ Phản Ánh Của Tôi'}</h2>
                 <span className={`panel-role-tag ${isOperator ? 'tag-officer' : 'tag-citizen'}`}>
                   {isOperator ? <Shield size={13} /> : <User size={13} />}
-                  <span>{isOperator ? 'Quyền cán bộ thụ lý' : 'Quyền công dân'}</span>
+                  <span>{isDispatcher ? 'Quyền điều phối' : isOperator ? 'Quyền cán bộ thụ lý' : 'Quyền công dân'}</span>
                 </span>
               </div>
               <p className="panel-subtext">
@@ -689,6 +750,11 @@ export function ReportsPage() {
                 >
                   Hoàn tất
                 </button>
+                {isOperator && <button type="button"
+                  className={`status-tab ${stateFilter === 'overdue' ? 'active' : ''}`}
+                  onClick={() => setStateFilter('overdue')}>
+                  Quá hạn ({reports.filter(isOverdue).length})
+                </button>}
               </div>
 
               {/* Items Feed */}
@@ -730,6 +796,7 @@ export function ReportsPage() {
                           </span>
                         )}
                       </div>
+                      {isOverdue(report) && <span className="item-category-tag">Quá hạn {report.due_at && formatDate(report.due_at)}</span>}
                     </button>
                   ))
                 ) : (
@@ -763,28 +830,87 @@ export function ReportsPage() {
                     <StatusPill state={detail.state} />
                   </div>
 
-                  {/* Officer Command Action Bar (If Officer) */}
-                  {isOperator && detail.state && actions[detail.state] && (
+                  {isDispatcher && detail.state !== 'resolved' && (
                     <div className="officer-action-panel">
-                      <div className="action-panel-text">
-                        <ShieldAlert size={18} />
-                        <div>
-                          <strong>Thao tác chuyển bước quy trình xử lý</strong>
-                          <p>
-                            Là cán bộ quản lý, bạn có quyền chuyển trạng thái hồ sơ sang bước tiếp
-                            theo sau khi kiểm tra hiện trường.
-                          </p>
+                      <form onSubmit={submitDispatch} className="report-create-form">
+                        <div className="action-panel-text"><ShieldAlert size={18} /><strong>Điều phối hồ sơ</strong></div>
+                        {detail.pending_unit && <p>Đơn vị đề nghị chuyển đến {unitNames[detail.pending_unit]}: {detail.pending_reason}</p>}
+                        <div className="form-grid-two">
+                          <div className="form-field">
+                            <label htmlFor="dispatch-unit">Đơn vị xử lý</label>
+                            <select id="dispatch-unit" value={dispatchUnit} onChange={(e) => setDispatchUnit(e.target.value)}>
+                              {Object.entries(unitNames).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                            </select>
+                          </div>
+                          <div className="form-field">
+                            <label htmlFor="dispatch-due">Hạn xử lý</label>
+                            <input id="dispatch-due" type="datetime-local" required value={dispatchDue}
+                              onChange={(e) => setDispatchDue(e.target.value)} />
+                          </div>
                         </div>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn-primary"
-                        onClick={() => void takeAction(actions[detail.state!].key)}
-                        disabled={busy}
-                      >
-                        <CheckCircle2 size={16} />
-                        <span>{busy ? 'Đang cập nhật…' : actions[detail.state].text}</span>
-                      </button>
+                        <div className="form-field">
+                          <label htmlFor="dispatch-note">Lý do phân công</label>
+                          <textarea id="dispatch-note" required minLength={3} maxLength={500}
+                            value={dispatchNote} onChange={(e) => setDispatchNote(e.target.value)} />
+                        </div>
+                        <button type="submit" className="btn-primary" disabled={busy || !detail.workflow_id}>
+                          <CheckCircle2 size={16} />{busy ? 'Đang lưu…' : detail.assigned_unit ? 'Cập nhật phân công' : 'Phân công xử lý'}
+                        </button>
+                      </form>
+                      {detail.pending_unit && (
+                        <form onSubmit={(e) => { e.preventDefault(); void updateReport('/transfer-request/reject', 'Đã từ chối đề nghị chuyển.', { note: rejectNote.trim() }); }} className="report-create-form">
+                          <div className="form-field">
+                            <label htmlFor="reject-note">Lý do từ chối đề nghị chuyển</label>
+                            <input id="reject-note" required minLength={3} maxLength={500} value={rejectNote}
+                              onChange={(e) => setRejectNote(e.target.value)} />
+                          </div>
+                          <button type="submit" className="btn-outline" disabled={busy}>Từ chối đề nghị</button>
+                        </form>
+                      )}
+                    </div>
+                  )}
+
+                  {isHandler && detail.state === 'assigned' && (
+                    <div className="officer-action-panel">
+                      {!detail.accepted_at ? (
+                        <button type="button" className="btn-primary" disabled={busy}
+                          onClick={() => void updateReport('/accept', 'Đơn vị đã nhận việc.')}>Nhận xử lý</button>
+                      ) : (
+                        <>
+                          <button type="button" className="btn-primary" disabled={busy || Boolean(detail.pending_unit)}
+                            onClick={() => void updateReport('/actions/resolve', 'Đã hoàn tất xử lý phản ánh.')}>Xác nhận hoàn tất</button>
+                          {!detail.pending_unit && (
+                            <form onSubmit={(event) => void submitProgress(event)} className="report-create-form">
+                              <div className="form-field">
+                                <label htmlFor="progress-note">Cập nhật tiến độ cho người dân</label>
+                                <textarea id="progress-note" required minLength={3} maxLength={500}
+                                  value={progressNote} onChange={(e) => setProgressNote(e.target.value)}
+                                  placeholder="Ví dụ: Đã kiểm tra hiện trường, đang đặt linh kiện thay thế" />
+                              </div>
+                              <button type="submit" className="btn-outline" disabled={busy}>Lưu tiến độ</button>
+                            </form>
+                          )}
+                          {detail.pending_unit ? (
+                            <p>Đang chờ điều phối viên xem xét đề nghị chuyển đến {unitNames[detail.pending_unit]}.</p>
+                          ) : (
+                            <form onSubmit={submitTransfer} className="report-create-form">
+                              <div className="form-field">
+                                <label htmlFor="transfer-unit">Đề nghị chuyển đến</label>
+                                <select id="transfer-unit" value={transferUnit} onChange={(e) => setTransferUnit(e.target.value)}>
+                                  {Object.entries(unitNames).filter(([id]) => id !== detail.assigned_unit).map(([id, name]) =>
+                                    <option key={id} value={id}>{name}</option>)}
+                                </select>
+                              </div>
+                              <div className="form-field">
+                                <label htmlFor="transfer-reason">Lý do đề nghị</label>
+                                <textarea id="transfer-reason" required minLength={5} maxLength={500}
+                                  value={transferReason} onChange={(e) => setTransferReason(e.target.value)} />
+                              </div>
+                              <button type="submit" className="btn-outline" disabled={busy}>Gửi đề nghị chuyển đơn vị</button>
+                            </form>
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -828,6 +954,16 @@ export function ReportsPage() {
                     <div className="meta-cell">
                       <span className="meta-cell-label">Thời gian tạo</span>
                       <strong className="meta-cell-val">{formatDate(detail.created_at)}</strong>
+                    </div>
+
+                    <div className="meta-cell">
+                      <span className="meta-cell-label">Đơn vị xử lý</span>
+                      <strong className="meta-cell-val">{detail.assigned_unit ? unitNames[detail.assigned_unit] : 'Chưa phân công'}</strong>
+                    </div>
+
+                    <div className="meta-cell">
+                      <span className="meta-cell-label">Hạn xử lý</span>
+                      <strong className="meta-cell-val">{detail.due_at ? `${formatDate(detail.due_at)}${isOverdue(detail) ? ' · Quá hạn' : ''}` : 'Chưa có'}</strong>
                     </div>
 
                     <div className="meta-cell">
@@ -886,13 +1022,15 @@ export function ReportsPage() {
                                 <strong className="timeline-title">
                                   {event.action === 'start'
                                     ? 'Người dân gửi phản ánh'
-                                    : reportStates[event.to_state] || event.to_state}
+                                    : routingActions[event.action] || (event.to_state ? reportStates[event.to_state] || event.to_state : event.action)}
                                 </strong>
                                 <span className="timeline-date">{formatDate(event.created_at)}</span>
                               </div>
                               <span className="timeline-actor">
                                 Tác nhân: {event.actor || 'Hệ thống'}
                               </span>
+                              {event.to_unit && <span className="timeline-actor">Đơn vị: {unitNames[event.to_unit] || event.to_unit}</span>}
+                              {event.note && <p>{event.note}</p>}
                             </div>
                           </div>
                         ))}

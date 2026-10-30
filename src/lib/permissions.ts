@@ -12,8 +12,14 @@ const reportUnits = new Set(['infrastructure', 'environment', 'transport', 'inta
 
 export function canManage(user: User | null, feature: Feature): boolean {
   const roles = rolesOf(user);
-  return roles.includes('admin') || (roles.includes(featureRoles[feature]) &&
+  return roles.includes('admin') || (feature === 'reports' && roles.includes('reports_dispatcher')) ||
+    (roles.includes(featureRoles[feature]) &&
     (feature !== 'reports' || reportUnits.has(unitOf(user) || '')));
+}
+
+export function canDispatch(user: User | null): boolean {
+  const roles = rolesOf(user);
+  return roles.includes('admin') || roles.includes('reports_dispatcher');
 }
 
 export function managementOf(user: User | null): Feature[] {

@@ -7,6 +7,11 @@ export type Report = {
   description: string;
   category: string;
   unit_id: string;
+  assigned_unit: string | null;
+  due_at: string | null;
+  accepted_at: string | null;
+  pending_unit: string | null;
+  pending_reason: string | null;
   address: string;
   latitude: number | null;
   longitude: number | null;
@@ -16,7 +21,8 @@ export type Report = {
   updated_at: string;
   workflow_id: string | null;
   state: string | null;
-  history: { action: string; from_state: string | null; to_state: string; actor: string; created_at: string }[];
+  history: { action: string; from_state: string | null; to_state: string | null;
+    actor: string; created_at: string; from_unit?: string | null; to_unit?: string | null; note?: string | null }[];
   warnings?: string[];
 };
 
