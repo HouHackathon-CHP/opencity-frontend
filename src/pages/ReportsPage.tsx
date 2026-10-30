@@ -501,6 +501,12 @@ export function ReportsPage() {
 
             <div className="control-actions-wrap">
               {isOperator && (
+                <Link className="btn-outline" to="/reports/dashboard">
+                  <Clock3 size={16} />
+                  <span>Dashboard SLA</span>
+                </Link>
+              )}
+              {isOperator && (
                 <Link className="btn-outline" to="/reports/map">
                   <MapPin size={16} />
                   <span>Bản đồ điều hành</span>

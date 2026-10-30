@@ -26,6 +26,17 @@ export type Report = {
   warnings?: string[];
 };
 
+export type ReportsDashboard = {
+  generated_at: string;
+  counts: { total: number; new: number; triaged: number; in_progress: number; resolved: number;
+    unassigned: number; due_soon: number; overdue: number };
+  units: { unit_id: string; total: number; active: number; resolved: number;
+    due_soon: number; overdue: number }[];
+  urgent: { id: string; title: string; category: string; address: string;
+    state: string | null; assigned_unit: string | null; due_at: string | null;
+    priority: 'overdue' | 'due_soon' | 'unassigned' }[];
+};
+
 export type Notification = {
   id: string;
   report_id: string;

@@ -8,6 +8,7 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 - Search without Vietnamese diacritics, category filters, local favorites, responsive layout and service details.
 - A signed-in citizen creates a field report with optional image and browser location. A `reports_dispatcher` assigns a unit and deadline; the assigned `reports_operator` accepts, posts progress notes, requests a transfer or resolves it. The citizen sees the routing and workflow timeline. Coordinators can filter overdue cases.
 - Report staff have a map at `/reports/map` with scoped report markers, cluster zoom, filters for category/unit/status/overdue, and a list that keeps reports without coordinates visible. Selecting a marker or list item opens the existing report workflow for dispatch or handling. The map requires a browser with WebGL; its list remains usable if tiles cannot load.
+- Report staff have an SLA dashboard at `/reports/dashboard` with counts for new, active, resolved, unassigned, due-soon and overdue cases, unit workload and a priority queue. Links open the matching map filter or case. The backend aggregates only reports visible to the current account.
 - Signed-in users see report notifications, a count of unread items and links to the relevant case. The browser refreshes the count every 30 seconds while open.
 - `surveys_operator` can publish and close tenant-scoped, single-choice surveys. Each account can answer once; the web portal and citizen mobile app show results after an answer or after closure.
 - `bulletins_operator` can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
@@ -32,6 +33,8 @@ npm run dev
 Open <http://localhost:3000>. Use `localhost` for browser sign-in: it is the local origin registered with Keycloak and allowed by the gateway. Visits to `http://127.0.0.1:3000` are redirected there before OIDC begins. The catalog renders without the backend. Authentication and reporting require Keycloak at `http://localhost:8081`, gateway at `http://localhost:8000` and `opencity-backend` on the Compose network. For production, configure a HTTPS origin in this portal, Keycloak's `dxos-web` redirect/web origins, and gateway CORS together.
 
 For role testing, run `python scripts/smoke_app.py` in `opencity-backend`, then sign in as `dxos-dispatcher` (all tenant reports), `dxos-reports` (hạ tầng/chiếu sáng), `dxos-reports-environment` (môi trường/cây xanh), `dxos-bulletins`, or `dxos-surveys` using the local `DEMO_OPERATOR_PASSWORD` from `dxos-core/.env`. Report staff see cases only after a dispatcher assigns them to their unit. Sign out and back in after changing roles or `unit_id` in Keycloak so the browser receives a fresh access token.
+
+For a varied local map and SLA dashboard, run `python scripts/seed_dashboard_demo.py` once in `opencity-backend`. It is safe to rerun: existing `[DEMO SLA]` reports are reused without resetting deadlines.
 
 `npm run build` creates a static bundle under `dist/`. Business validation and orchestration live in the separate `opencity-backend` repository. Keep the Keycloak and gateway configuration on trusted origins before exposing the system.
 

@@ -5,7 +5,7 @@ import * as maplibregl from 'maplibre-gl';
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { canDispatch } from '../lib/permissions';
 import { reportStates, request, type Report } from '../lib/api';
@@ -30,11 +30,18 @@ function isOverdue(report: Report): boolean {
   return Boolean(report.due_at && report.state !== 'resolved' && Date.parse(report.due_at) < Date.now());
 }
 
+function isDueSoon(report: Report): boolean {
+  if (!report.due_at || report.state === 'resolved') return false;
+  const due = Date.parse(report.due_at);
+  return due >= Date.now() && due <= Date.now() + 24 * 60 * 60 * 1000;
+}
+
 function reportLabel(report: Report): string {
   return reportStates[report.state || 'submitted'] || report.state || 'Mới gửi';
 }
 
 export function ReportsMapPage() {
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const token = user?.access_token || '';
   const dispatcher = canDispatch(user);
@@ -46,10 +53,10 @@ export function ReportsMapPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('all');
-  const [unit, setUnit] = useState('all');
-  const [state, setState] = useState('all');
-  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [category, setCategory] = useState(searchParams.get('category') || 'all');
+  const [unit, setUnit] = useState(searchParams.get('unit') || 'all');
+  const [state, setState] = useState(searchParams.get('status') || 'all');
+  const [dueFilter, setDueFilter] = useState(searchParams.get('due') || 'all');
   const [listMode, setListMode] = useState<'all' | 'without-coordinates'>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -75,11 +82,12 @@ export function ReportsMapPage() {
     const needle = query.trim().toLocaleLowerCase('vi-VN');
     return (category === 'all' || report.category === category) &&
       (unit === 'all' || (report.assigned_unit || 'unassigned') === unit) &&
-      (state === 'all' || (report.state || 'submitted') === state) &&
-      (!overdueOnly || isOverdue(report)) &&
+      (state === 'all' || (state === 'open' ? report.state !== 'resolved' : (report.state || 'submitted') === state)) &&
+      (dueFilter === 'all' || (dueFilter === 'overdue' && isOverdue(report)) ||
+        (dueFilter === 'due_soon' && isDueSoon(report))) &&
       (!needle || [report.id, report.title, report.address, report.category]
         .some((value) => value.toLocaleLowerCase('vi-VN').includes(needle)));
-  }), [reports, query, category, unit, state, overdueOnly]);
+  }), [reports, query, category, unit, state, dueFilter]);
   const located = useMemo(() => filtered.filter(hasCoordinates), [filtered]);
   const withoutCoordinates = useMemo(() => filtered.filter((report) => !hasCoordinates(report)), [filtered]);
   const visibleList = listMode === 'all' ? filtered : withoutCoordinates;
@@ -225,13 +233,18 @@ export function ReportsMapPage() {
         </select></label>
         <label>Đơn vị<select value={unit} onChange={(event) => setUnit(event.target.value)}>
           <option value="all">Tất cả đơn vị được xem</option>
-          {units.map((value) => <option key={value} value={value}>{value === 'unassigned' ? 'Chưa phân công' : unitNames[value] || value}</option>)}
+          {units.map((value) => <option key={value} value={value}>{value === 'unassigned' ? 'Không gắn đơn vị' : unitNames[value] || value}</option>)}
         </select></label>
         <label>Trạng thái<select value={state} onChange={(event) => setState(event.target.value)}>
           <option value="all">Tất cả trạng thái</option>
+          <option value="open">Chưa hoàn tất</option>
           {Object.entries(reportStates).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>
-        <label className="reports-map-check"><input type="checkbox" checked={overdueOnly} onChange={(event) => setOverdueOnly(event.target.checked)} /> Chỉ hồ sơ quá hạn</label>
+        <label>Hạn xử lý<select value={dueFilter} onChange={(event) => setDueFilter(event.target.value)}>
+          <option value="all">Tất cả hạn xử lý</option>
+          <option value="due_soon">Sắp đến hạn (24 giờ)</option>
+          <option value="overdue">Đã quá hạn</option>
+        </select></label>
       </section>
 
       <div className="reports-map-layout">

@@ -11,6 +11,7 @@ import './style.css';
 const CatalogPage = React.lazy(() => import('./pages/CatalogPage').then((module) => ({ default: module.CatalogPage })));
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage').then((module) => ({ default: module.ReportsPage })));
 const ReportsMapPage = React.lazy(() => import('./pages/ReportsMapPage').then((module) => ({ default: module.ReportsMapPage })));
+const ReportsDashboardPage = React.lazy(() => import('./pages/ReportsDashboardPage').then((module) => ({ default: module.ReportsDashboardPage })));
 const SurveysPage = React.lazy(() => import('./pages/SurveysPage').then((module) => ({ default: module.SurveysPage })));
 const BulletinsPage = React.lazy(() => import('./pages/BulletinsPage').then((module) => ({ default: module.BulletinsPage })));
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage').then((module) => ({ default: module.NotificationsPage })));
@@ -38,6 +39,7 @@ function HomePage() {
         {managementLinks.filter((item) => management.includes(item.feature)).map((item) => (
           <Link className="btn-outline" key={item.feature} to={item.href}>{item.label}</Link>
         ))}
+        {management.includes('reports') && <Link className="btn-outline" to="/reports/dashboard">Dashboard điều hành phản ánh</Link>}
       </div>
     </section>
   );
@@ -72,6 +74,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/" element={<HomePage />} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
                 <Route path="/reports/map" element={<ReportsManagementRoute><ReportsMapPage /></ReportsManagementRoute>} />
+                <Route path="/reports/dashboard" element={<ReportsManagementRoute><ReportsDashboardPage /></ReportsManagementRoute>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/surveys" element={<FeatureRoute feature="surveys"><SurveysPage /></FeatureRoute>} />
                 <Route path="/bulletins" element={<FeatureRoute feature="bulletins"><BulletinsPage /></FeatureRoute>} />
