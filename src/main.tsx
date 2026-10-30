@@ -12,6 +12,7 @@ const CatalogPage = React.lazy(() => import('./pages/CatalogPage').then((module)
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage').then((module) => ({ default: module.ReportsPage })));
 const SurveysPage = React.lazy(() => import('./pages/SurveysPage').then((module) => ({ default: module.SurveysPage })));
 const BulletinsPage = React.lazy(() => import('./pages/BulletinsPage').then((module) => ({ default: module.BulletinsPage })));
+const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage').then((module) => ({ default: module.NotificationsPage })));
 
 const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'reports', label: 'Xử lý phản ánh', href: '/reports' },
@@ -63,6 +64,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
               <Route element={<Shell />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/surveys" element={<FeatureRoute feature="surveys"><SurveysPage /></FeatureRoute>} />
                 <Route path="/bulletins" element={<FeatureRoute feature="bulletins"><BulletinsPage /></FeatureRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />

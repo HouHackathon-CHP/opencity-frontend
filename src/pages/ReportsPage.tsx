@@ -25,7 +25,7 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { rolesOf, unitOf } from '../lib/auth';
 import { canDispatch, canManage } from '../lib/permissions';
@@ -161,6 +161,8 @@ function PhotoThumbnail({
 }
 
 export function ReportsPage() {
+  const [searchParams] = useSearchParams();
+  const linkedReport = searchParams.get('report');
   const { user, loading: authLoading, login } = useAuth();
   const token = user?.access_token || '';
   const isOperator = canManage(user, 'reports');
@@ -183,6 +185,10 @@ export function ReportsPage() {
   const [transferReason, setTransferReason] = useState('');
   const [progressNote, setProgressNote] = useState('');
   const [rejectNote, setRejectNote] = useState('');
+
+  useEffect(() => {
+    if (linkedReport) setSelectedId(linkedReport);
+  }, [linkedReport]);
 
   useEffect(() => {
     if (!detail) return;

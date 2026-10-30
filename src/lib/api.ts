@@ -26,6 +26,16 @@ export type Report = {
   warnings?: string[];
 };
 
+export type Notification = {
+  id: string;
+  report_id: string;
+  kind: string;
+  title: string;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+};
+
 export type SurveySummary = {
   id: string; title: string; description: string; status: 'open' | 'closed';
   created_at: string; closed_at: string | null; my_option_id: string | null;

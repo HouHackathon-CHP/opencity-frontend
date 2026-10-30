@@ -54,4 +54,6 @@ A `bulletins_operator` publishes news or an alert through `/api/opencity/bulleti
 
 ## Next capability work
 
-The next common services are notifications/task inbox, WebGIS report view, service registry administration and shared search. These map to H, P and D. AI classification and duplicate suggestions can follow once the operational data and review flow exist; AI suggestions must remain subject to human review.
+The report workflow now writes in-app notifications for the citizen, assigned unit and dispatcher. The backend filters unit notices by the current assignment, tracks read state per account and creates one reminder per assignment when a case is within 24 hours of its deadline or overdue. Web polls while open; Android refreshes its inbox when opened. Delivery outside the app requires a separate push service or background worker.
+
+The next common services are WebGIS report view, service registry administration and shared search. These map to H, P and D. AI classification and duplicate suggestions can follow once the operational data and review flow exist; AI suggestions must remain subject to human review.

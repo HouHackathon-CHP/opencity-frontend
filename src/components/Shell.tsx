@@ -1,15 +1,32 @@
 // SPDX-License-Identifier: Apache-2.0
-import { ArrowRight, ClipboardList, ExternalLink, Globe, LayoutGrid, LogIn, LogOut, MapPin, Newspaper, Shield, ShieldCheck, UserCheck } from 'lucide-react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Bell, ClipboardList, ExternalLink, Globe, LayoutGrid, LogIn, LogOut, MapPin, Newspaper, Shield, ShieldCheck, UserCheck } from 'lucide-react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { displayName } from '../lib/auth';
 import { canOpenFeature, managementOf, type Feature } from '../lib/permissions';
 import { Logo } from './Logo';
+import { request, type Notification } from '../lib/api';
 
 export function Shell() {
   const { user, loading, login, logout } = useAuth();
   const operator = managementOf(user).length > 0;
   const canSee = (feature: Feature) => !loading && canOpenFeature(user, feature);
+  const location = useLocation();
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    if (!user?.access_token) { setUnread(0); return; }
+    let active = true;
+    const poll = () => {
+      void request<Notification[]>('/api/opencity/notifications', user.access_token)
+        .then((items) => { if (active) setUnread(items.filter((item) => !item.read_at).length); })
+        .catch(() => { /* The page presents API errors if opened. */ });
+    };
+    poll();
+    const timer = window.setInterval(poll, 30000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, [user?.access_token, location.pathname]);
 
   return (
     <div className="app-shell">
@@ -68,6 +85,11 @@ export function Shell() {
           {/* User Account / Login Area */}
           <div className="account-area">
             {user ? (
+              <>
+              <NavLink to="/notifications" className="notification-nav-link" aria-label={`Thông báo${unread ? `, ${unread} chưa đọc` : ''}`}>
+                <Bell size={20} />
+                {unread > 0 && <span className="notification-count">{unread > 99 ? '99+' : unread}</span>}
+              </NavLink>
               <div className="user-profile-widget">
                 <div className={`user-role-pill ${operator ? 'role-officer' : 'role-citizen'}`}>
                   {operator ? <Shield size={13} /> : <UserCheck size={13} />}
@@ -92,6 +114,7 @@ export function Shell() {
                   <LogOut size={16} />
                 </button>
               </div>
+              </>
             ) : (
               <button
                 type="button"
@@ -189,6 +212,10 @@ export function Shell() {
         {canSee('bulletins') && <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <Newspaper size={20} />
           <span>Tin tức</span>
+        </NavLink>}
+        {user && <NavLink to="/notifications" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+          <Bell size={20} />
+          <span>Thông báo{unread ? ` (${unread})` : ''}</span>
         </NavLink>}
       </nav>
     </div>
