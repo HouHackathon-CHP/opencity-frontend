@@ -500,6 +500,12 @@ export function ReportsPage() {
             </div>
 
             <div className="control-actions-wrap">
+              {isOperator && (
+                <Link className="btn-outline" to="/reports/map">
+                  <MapPin size={16} />
+                  <span>Bản đồ điều hành</span>
+                </Link>
+              )}
               <button
                 className="btn-outline"
                 type="button"

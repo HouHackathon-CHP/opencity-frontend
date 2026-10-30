@@ -7,6 +7,7 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 - A file-defined service catalog covering **60 service concepts in 12 categories**, transcribed and grouped from the screenshots supplied for the project. Each entry states whether it is available, planned, or awaiting a provider integration.
 - Search without Vietnamese diacritics, category filters, local favorites, responsive layout and service details.
 - A signed-in citizen creates a field report with optional image and browser location. A `reports_dispatcher` assigns a unit and deadline; the assigned `reports_operator` accepts, posts progress notes, requests a transfer or resolves it. The citizen sees the routing and workflow timeline. Coordinators can filter overdue cases.
+- Report staff have a map at `/reports/map` with scoped report markers, cluster zoom, filters for category/unit/status/overdue, and a list that keeps reports without coordinates visible. Selecting a marker or list item opens the existing report workflow for dispatch or handling. The map requires a browser with WebGL; its list remains usable if tiles cannot load.
 - Signed-in users see report notifications, a count of unread items and links to the relevant case. The browser refreshes the count every 30 seconds while open.
 - `surveys_operator` can publish and close tenant-scoped, single-choice surveys. Each account can answer once; the web portal and citizen mobile app show results after an answer or after closure.
 - `bulletins_operator` can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
@@ -33,6 +34,8 @@ Open <http://localhost:3000>. Use `localhost` for browser sign-in: it is the loc
 For role testing, run `python scripts/smoke_app.py` in `opencity-backend`, then sign in as `dxos-dispatcher` (all tenant reports), `dxos-reports` (hạ tầng/chiếu sáng), `dxos-reports-environment` (môi trường/cây xanh), `dxos-bulletins`, or `dxos-surveys` using the local `DEMO_OPERATOR_PASSWORD` from `dxos-core/.env`. Report staff see cases only after a dispatcher assigns them to their unit. Sign out and back in after changing roles or `unit_id` in Keycloak so the browser receives a fresh access token.
 
 `npm run build` creates a static bundle under `dist/`. Business validation and orchestration live in the separate `opencity-backend` repository. Keep the Keycloak and gateway configuration on trusted origins before exposing the system.
+
+The report map uses MapLibre GL JS and defaults to interactive OpenStreetMap raster tiles. You can set `VITE_MAP_TILE_URL` to a suitable `{z}/{x}/{y}` raster tile endpoint before building. Keep provider attribution visible and use an appropriate tile service for deployment or high traffic. The report API continues to enforce role and tenant access; map filters only narrow the records already returned to this account.
 
 ## Add a service
 

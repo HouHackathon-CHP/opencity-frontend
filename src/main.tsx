@@ -5,11 +5,12 @@ import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 import { Shell } from './components/Shell';
 import { AuthCallback } from './pages/AuthCallback';
-import { canOpenFeature, managementOf, type Feature } from './lib/permissions';
+import { canManage, canOpenFeature, managementOf, type Feature } from './lib/permissions';
 import './style.css';
 
 const CatalogPage = React.lazy(() => import('./pages/CatalogPage').then((module) => ({ default: module.CatalogPage })));
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage').then((module) => ({ default: module.ReportsPage })));
+const ReportsMapPage = React.lazy(() => import('./pages/ReportsMapPage').then((module) => ({ default: module.ReportsMapPage })));
 const SurveysPage = React.lazy(() => import('./pages/SurveysPage').then((module) => ({ default: module.SurveysPage })));
 const BulletinsPage = React.lazy(() => import('./pages/BulletinsPage').then((module) => ({ default: module.BulletinsPage })));
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage').then((module) => ({ default: module.NotificationsPage })));
@@ -48,6 +49,12 @@ function FeatureRoute({ feature, children }: { feature: Feature; children: React
   return canOpenFeature(user, feature) ? children : <Navigate to="/" replace />;
 }
 
+function ReportsManagementRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return canManage(user, 'reports') ? children : <Navigate to="/" replace />;
+}
+
 // OIDC state is stored per origin. Use the one origin registered in Keycloak.
 if (window.location.hostname === '127.0.0.1' && window.location.port === '3000') {
   const canonicalUrl = new URL(window.location.href);
@@ -64,6 +71,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
               <Route element={<Shell />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
+                <Route path="/reports/map" element={<ReportsManagementRoute><ReportsMapPage /></ReportsManagementRoute>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/surveys" element={<FeatureRoute feature="surveys"><SurveysPage /></FeatureRoute>} />
                 <Route path="/bulletins" element={<FeatureRoute feature="bulletins"><BulletinsPage /></FeatureRoute>} />
