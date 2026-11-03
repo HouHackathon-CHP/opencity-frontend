@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   AlertCircle,
   ArrowRight,
@@ -17,6 +17,7 @@ import {
   RefreshCw,
   Search,
   Send,
+  Sparkles,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -29,7 +30,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { rolesOf, unitOf } from '../lib/auth';
 import { canDispatch, canManage } from '../lib/permissions';
-import { ApiError, downloadAttachment, reportStates, request, type Report } from '../lib/api';
+import { ApiError, downloadAttachment, reportStates, request, type Report, type TriageSuggestion } from '../lib/api';
 
 const types = ['Hạ tầng', 'Môi trường', 'Giao thông', 'Chiếu sáng', 'Cây xanh', 'Khác'];
 const unitNames: Record<string, string> = {
@@ -172,6 +173,8 @@ export function ReportsPage() {
 
   const [reports, setReports] = useState<Report[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
   const [detail, setDetail] = useState<Report | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -185,6 +188,9 @@ export function ReportsPage() {
   const [transferReason, setTransferReason] = useState('');
   const [progressNote, setProgressNote] = useState('');
   const [rejectNote, setRejectNote] = useState('');
+  const [triage, setTriage] = useState<TriageSuggestion | null>(null);
+  const [triageBusy, setTriageBusy] = useState(false);
+  const activeTriage = triage?.report_id === detail?.id ? triage : null;
 
   useEffect(() => {
     if (linkedReport) setSelectedId(linkedReport);
@@ -257,6 +263,19 @@ export function ReportsPage() {
     [token, refresh],
   );
 
+  const loadTriage = useCallback(async (id: string) => {
+    if (!token || !isDispatcher) return;
+    try {
+      const suggestion = await request<TriageSuggestion>(
+        `/api/opencity/reports/${encodeURIComponent(id)}/triage-suggestion`, token);
+      if (selectedIdRef.current === id) setTriage(suggestion);
+    } catch (cause) {
+      if (selectedIdRef.current !== id) return;
+      if (cause instanceof ApiError && cause.status === 404) setTriage(null);
+      else setError(cause instanceof Error ? cause.message : 'Không tải được gợi ý phân luồng.');
+    }
+  }, [token, isDispatcher]);
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -264,10 +283,29 @@ export function ReportsPage() {
   useEffect(() => {
     if (selectedId) {
       void loadDetail(selectedId);
+      setTriage(null);
+      if (isDispatcher) void loadTriage(selectedId);
     } else {
       setDetail(null);
+      setTriage(null);
     }
-  }, [selectedId, loadDetail]);
+  }, [selectedId, loadDetail, loadTriage, isDispatcher]);
+
+  async function generateTriage() {
+    if (!detail || !token || !isDispatcher || triageBusy) return;
+    setTriageBusy(true);
+    setError('');
+    try {
+      const suggestion = await request<TriageSuggestion>(
+        `/api/opencity/reports/${encodeURIComponent(detail.id)}/triage-suggestion`, token,
+        { method: 'POST' });
+      if (selectedIdRef.current === detail.id) setTriage({ ...suggestion, stale: false });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không tạo được gợi ý phân luồng.');
+    } finally {
+      setTriageBusy(false);
+    }
+  }
 
   // Form submit
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -336,6 +374,7 @@ export function ReportsPage() {
       setNotice(message);
       await refresh();
       await loadDetail(detail.id);
+      if (path === '/dispatch' && isDispatcher) await loadTriage(detail.id);
       return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không thể cập nhật quy trình.');
@@ -350,6 +389,7 @@ export function ReportsPage() {
     if (!dispatchDue) return;
     void updateReport('/dispatch', 'Đã phân công hồ sơ và lưu hạn xử lý.', {
       unit_id: dispatchUnit, due_at: new Date(dispatchDue).toISOString(), note: dispatchNote.trim(),
+      ...(activeTriage && !activeTriage.stale && !activeTriage.reviewed_unit ? { suggestion_id: activeTriage.id } : {}),
     });
   }
 
@@ -849,7 +889,39 @@ export function ReportsPage() {
                   </div>
 
                   {isDispatcher && detail.state !== 'resolved' && (
-                    <div className="officer-action-panel">
+                    <div className="officer-action-panel triage-officer-panel">
+                      <section className="triage-panel" aria-label="Gợi ý phân luồng">
+                        <div className="triage-panel-heading">
+                          <div><Sparkles size={18} /><strong>Gợi ý phân luồng</strong></div>
+                          <button type="button" className="btn-outline" onClick={() => void generateTriage()}
+                            disabled={triageBusy || busy}>
+                            {triageBusy ? 'Đang phân tích…' : activeTriage ? 'Phân tích lại' : 'Phân tích phản ánh'}
+                          </button>
+                        </div>
+                        <p>Mô hình Naive Bayes nội bộ phân tích văn bản; cán bộ xác nhận hoặc sửa đơn vị và tự đặt hạn xử lý. Ảnh chưa được phân tích.</p>
+                        {activeTriage && <>
+                          {activeTriage.stale && <p className="triage-warning">Nội dung phản ánh đã thay đổi. Hãy phân tích lại để dùng gợi ý.</p>}
+                          {activeTriage.reviewed_unit && <p className="triage-review">Đã phân công cho {unitNames[activeTriage.reviewed_unit] || activeTriage.reviewed_unit} · {activeTriage.matched ? 'theo gợi ý' : 'cán bộ đã điều chỉnh gợi ý'}</p>}
+                          <div className="triage-result">
+                            <div><span>Đề xuất</span><strong>{unitNames[activeTriage.suggested_unit] || activeTriage.suggested_unit}</strong></div>
+                            {!activeTriage.stale && !activeTriage.reviewed_unit && <button type="button" className="btn-outline"
+                              onClick={() => setDispatchUnit(activeTriage.suggested_unit)}>Chọn đơn vị này</button>}
+                          </div>
+                          <div className="triage-ranking" aria-label="Điểm xếp hạng tương đối">
+                            <span>Mức cần chú ý: {{ high: 'Cao', normal: 'Thông thường', low: 'Thấp' }[activeTriage.urgency]}</span>
+                            {activeTriage.ranked_labels.map((item) => <span key={item.label}>{unitNames[item.label] || item.label}: {item.score.toFixed(2)}</span>)}
+                          </div>
+                          <p>Mức cần chú ý chỉ là gợi ý từ văn bản; cán bộ kiểm tra thực tế và đặt hạn xử lý.</p>
+                          {activeTriage.signals.length === 0 && <p className="triage-warning">Không đủ tín hiệu văn bản để chọn đơn vị; chuyển về tiếp nhận chung để cán bộ kiểm tra.</p>}
+                          {activeTriage.signals.length > 0 && <p>Tín hiệu văn bản: {activeTriage.signals.join(', ')}</p>}
+                          {activeTriage.similar.length > 0 && <div className="triage-duplicates">
+                            <strong>Phản ánh có nội dung tương tự</strong>
+                            {activeTriage.similar.map((item) => <Link key={item.id} to={`/reports?report=${encodeURIComponent(item.id)}`}>
+                              #{item.id.slice(0, 8)} · mức tương đồng {Math.round(item.similarity * 100)}%
+                            </Link>)}
+                          </div>}
+                        </>}
+                      </section>
                       <form onSubmit={submitDispatch} className="report-create-form">
                         <div className="action-panel-text"><ShieldAlert size={18} /><strong>Điều phối hồ sơ</strong></div>
                         {detail.pending_unit && <p>Đơn vị đề nghị chuyển đến {unitNames[detail.pending_unit]}: {detail.pending_reason}</p>}

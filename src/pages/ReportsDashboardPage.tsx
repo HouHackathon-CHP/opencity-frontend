@@ -3,7 +3,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowRight, Clock3, MapPin, RefreshCw, TriangleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { request, type ReportsDashboard } from '../lib/api';
+import { canDispatch } from '../lib/permissions';
+import { request, type ReportsDashboard, type TriageMetrics } from '../lib/api';
 
 const unitNames: Record<string, string> = {
   infrastructure: 'Hạ tầng & chiếu sáng',
@@ -38,7 +39,9 @@ function formatDate(value: string | null): string {
 export function ReportsDashboardPage() {
   const { user } = useAuth();
   const token = user?.access_token || '';
+  const dispatcher = canDispatch(user);
   const [dashboard, setDashboard] = useState<ReportsDashboard | null>(null);
+  const [triageMetrics, setTriageMetrics] = useState<TriageMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -47,13 +50,18 @@ export function ReportsDashboardPage() {
     setLoading(true);
     setError('');
     try {
-      setDashboard(await request<ReportsDashboard>('/api/opencity/reports/dashboard', token));
+      const [reportData, triageData] = await Promise.all([
+        request<ReportsDashboard>('/api/opencity/reports/dashboard', token),
+        dispatcher ? request<TriageMetrics>('/api/opencity/reports/triage-metrics', token) : Promise.resolve(null),
+      ]);
+      setDashboard(reportData);
+      setTriageMetrics(triageData);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không tải được dữ liệu điều hành.');
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [token, dispatcher]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
@@ -86,6 +94,13 @@ export function ReportsDashboardPage() {
             </Link>
           ))}
         </section>
+
+        {triageMetrics && <section className="triage-metrics" aria-label="Chất lượng gợi ý phân luồng">
+          <div><span>Gợi ý đã tạo</span><strong>{triageMetrics.generated}</strong></div>
+          <div><span>Đã được cán bộ xem xét</span><strong>{triageMetrics.reviewed}</strong></div>
+          <div><span>Chọn đúng đơn vị gợi ý</span><strong>{triageMetrics.accepted}</strong></div>
+          <div><span>Cán bộ đổi đơn vị</span><strong>{triageMetrics.overridden}</strong></div>
+        </section>}
 
         <div className="reports-dashboard-grid">
           <section className="reports-dashboard-panel" aria-labelledby="urgent-heading">

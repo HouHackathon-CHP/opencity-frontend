@@ -37,6 +37,20 @@ export type ReportsDashboard = {
     priority: 'overdue' | 'due_soon' | 'unassigned' }[];
 };
 
+export type TriageSuggestion = {
+  id: string; report_id: string; suggested_unit: string; model_version: string;
+  source_updated_at: string; created_at: string; stale?: boolean;
+  ranked_labels: { label: string; score: number }[];
+  urgency: 'high' | 'normal' | 'low';
+  urgency_ranked: { label: string; score: number }[];
+  signals: string[]; similar: { id: string; similarity: number }[];
+  reviewed_unit: string | null; matched: boolean | null;
+};
+
+export type TriageMetrics = {
+  generated: number; reviewed: number; accepted: number; overridden: number;
+};
+
 export type Notification = {
   id: string;
   report_id: string;
