@@ -60,6 +60,18 @@ export type Bulletin = {
   area: string | null; latitude: number | null; longitude: number | null; published_at: string;
 };
 
+export type AppointmentSlot = {
+  id: string; starts_at: string; ends_at: string; location: string;
+  capacity: number; confirmed_count: number; remaining_capacity: number;
+};
+export type Appointment = {
+  id: string; slot_id: string; user_id: string; reason: string;
+  status: 'pending' | 'confirmed' | 'rejected' | 'cancelled';
+  starts_at: string; ends_at: string; location: string;
+  created_at: string; reviewed_at: string | null; reviewed_by: string | null;
+  review_note: string | null; cancelled_at: string | null;
+};
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }

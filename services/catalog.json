@@ -18,7 +18,7 @@
   "services": [
     { "id": "field-reports", "category": "feedback", "name": "Phản ánh hiện trường", "description": "Gửi phản ánh kèm ảnh và vị trí; theo dõi quá trình xử lý.", "icon": "MapPin", "kind": "native", "status": "available", "route": "/reports" },
     { "id": "administrative-feedback", "category": "feedback", "name": "Phản ánh thủ tục hành chính", "description": "Góp ý về quy trình và chất lượng phục vụ.", "icon": "FileWarning", "kind": "native", "status": "planned" },
-    { "id": "citizen-appointment", "category": "feedback", "name": "Đăng ký tiếp công dân", "description": "Đặt lịch và theo dõi buổi tiếp công dân.", "icon": "CalendarDays", "kind": "native", "status": "planned" },
+    { "id": "citizen-appointment", "category": "feedback", "name": "Đăng ký tiếp công dân", "description": "Gửi yêu cầu chọn khung giờ tiếp công dân và theo dõi xác nhận trong OpenCity.", "icon": "CalendarDays", "kind": "native", "status": "available", "route": "/appointments" },
     { "id": "business-feedback", "category": "feedback", "name": "Doanh nghiệp kiến nghị", "description": "Kênh kiến nghị dành cho doanh nghiệp.", "icon": "BriefcaseBusiness", "kind": "native", "status": "planned" },
     { "id": "report-map", "category": "feedback", "name": "Bản đồ phản ánh", "description": "Theo dõi phản ánh theo khu vực và trạng thái.", "icon": "MapPinned", "kind": "native", "status": "planned" },
 

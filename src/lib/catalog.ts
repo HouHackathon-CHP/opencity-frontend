@@ -18,7 +18,7 @@ export type Service = {
 
 export const categories = raw.categories as Category[];
 export const services = raw.services as Service[];
-export const featured = ['field-reports', 'report-map', 'service-booking', 'warnings', 'air-quality', 'find-bus'];
+export const featured = ['field-reports', 'citizen-appointment', 'report-map', 'warnings', 'air-quality', 'find-bus'];
 
 export function serviceHref(service: Service): string | undefined {
   if (service.status !== 'available') return undefined;

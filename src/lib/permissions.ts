@@ -2,11 +2,12 @@
 import type { User } from 'oidc-client-ts';
 import { rolesOf, unitOf } from './auth';
 
-export type Feature = 'reports' | 'bulletins' | 'surveys';
+export type Feature = 'reports' | 'bulletins' | 'surveys' | 'appointments';
 const featureRoles: Record<Feature, string> = {
   reports: 'reports_operator',
   bulletins: 'bulletins_operator',
   surveys: 'surveys_operator',
+  appointments: 'appointments_operator',
 };
 const reportUnits = new Set(['infrastructure', 'environment', 'transport', 'intake']);
 

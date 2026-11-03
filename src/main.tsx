@@ -15,11 +15,13 @@ const ReportsDashboardPage = React.lazy(() => import('./pages/ReportsDashboardPa
 const SurveysPage = React.lazy(() => import('./pages/SurveysPage').then((module) => ({ default: module.SurveysPage })));
 const BulletinsPage = React.lazy(() => import('./pages/BulletinsPage').then((module) => ({ default: module.BulletinsPage })));
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage').then((module) => ({ default: module.NotificationsPage })));
+const AppointmentsPage = React.lazy(() => import('./pages/AppointmentsPage').then((module) => ({ default: module.AppointmentsPage })));
 
 const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'reports', label: 'Xử lý phản ánh', href: '/reports' },
   { feature: 'bulletins', label: 'Phát hành tin & cảnh báo', href: '/bulletins' },
   { feature: 'surveys', label: 'Điều hành khảo sát', href: '/surveys' },
+  { feature: 'appointments', label: 'Tiếp công dân', href: '/appointments' },
 ];
 
 function HomePage() {
@@ -77,6 +79,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/reports/dashboard" element={<ReportsManagementRoute><ReportsDashboardPage /></ReportsManagementRoute>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/surveys" element={<FeatureRoute feature="surveys"><SurveysPage /></FeatureRoute>} />
+                <Route path="/appointments" element={<FeatureRoute feature="appointments"><AppointmentsPage /></FeatureRoute>} />
                 <Route path="/bulletins" element={<FeatureRoute feature="bulletins"><BulletinsPage /></FeatureRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useEffect, useState } from 'react';
-import { ArrowRight, Bell, ClipboardList, ExternalLink, Globe, LayoutGrid, LogIn, LogOut, MapPin, Newspaper, Shield, ShieldCheck, UserCheck } from 'lucide-react';
+import { ArrowRight, Bell, CalendarDays, ClipboardList, ExternalLink, Globe, LayoutGrid, LogIn, LogOut, MapPin, Newspaper, Shield, ShieldCheck, UserCheck } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { displayName } from '../lib/auth';
@@ -79,6 +79,10 @@ export function Shell() {
             {canSee('bulletins') && <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <Newspaper size={18} />
               <span>Tin & Cảnh báo</span>
+            </NavLink>}
+            {canSee('appointments') && <NavLink to="/appointments" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              <CalendarDays size={18} />
+              <span>Tiếp công dân</span>
             </NavLink>}
           </nav>
 
@@ -160,6 +164,7 @@ export function Shell() {
                 {canSee('reports') && <li><Link to="/reports">Phản ánh hiện trường</Link></li>}
                 {canSee('surveys') && <li><Link to="/surveys">Khảo sát & Lấy ý kiến</Link></li>}
                 {canSee('bulletins') && <li><Link to="/bulletins">Bản tin & Cảnh báo khu vực</Link></li>}
+                {canSee('appointments') && <li><Link to="/appointments">Đăng ký tiếp công dân</Link></li>}
                 {!operator && <li><Link to="/#danh-muc">Danh mục dịch vụ số</Link></li>}
               </ul>
             </div>
@@ -212,6 +217,10 @@ export function Shell() {
         {canSee('bulletins') && <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <Newspaper size={20} />
           <span>Tin tức</span>
+        </NavLink>}
+        {canSee('appointments') && <NavLink to="/appointments" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+          <CalendarDays size={20} />
+          <span>Lịch hẹn</span>
         </NavLink>}
         {user && <NavLink to="/notifications" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <Bell size={20} />
