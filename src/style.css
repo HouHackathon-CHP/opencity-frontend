@@ -3451,3 +3451,27 @@ a {
 @media (max-width: 800px) { .appointment-layout { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .appointment-toolbar { align-items: stretch; flex-direction: column; } .appointment-form { grid-template-columns: 1fr; } .appointment-form label:has(textarea), .appointment-form p { grid-column: auto; } .appointment-item-heading { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 480px) { .mobile-nav-item { flex: 1; min-width: 0; padding-inline: 2px; font-size: 10px; } }
+
+/* Dispatcher text analysis and human review */
+.triage-officer-panel { display: grid; align-items: stretch; justify-content: stretch; gap: 16px; }
+.triage-officer-panel > .report-create-form { width: 100%; }
+.triage-panel { display: grid; gap: 11px; min-width: 0; padding: 17px; border: 1px solid var(--color-primary-border); border-radius: var(--radius-md); background: white; }
+.triage-panel-heading, .triage-panel-heading > div { display: flex; align-items: center; gap: 9px; }
+.triage-panel-heading { justify-content: space-between; flex-wrap: wrap; }
+.triage-panel-heading strong { color: var(--color-text-main); }
+.triage-panel p { margin: 0; color: var(--color-text-secondary); font-size: 12px; line-height: 1.5; }
+.triage-panel .triage-warning { color: #b45309; font-weight: 700; }
+.triage-panel .triage-review { color: #047857; font-weight: 700; }
+.triage-result { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; border-radius: 10px; background: var(--color-primary-light); }
+.triage-result > div { display: grid; gap: 4px; }
+.triage-result span { color: var(--color-text-secondary); font-size: 11px; }
+.triage-result strong { color: var(--color-text-main); }
+.triage-ranking { display: flex; flex-wrap: wrap; gap: 6px; }
+.triage-ranking span { padding: 5px 8px; border-radius: 999px; background: #f1f5f9; color: #334155; font-size: 11px; }
+.triage-duplicates { display: grid; gap: 5px; font-size: 12px; }
+.triage-duplicates a { color: var(--color-primary); }
+.triage-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.triage-metrics > div { display: grid; gap: 6px; padding: 16px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: white; }
+.triage-metrics span { color: var(--color-text-secondary); font-size: 12px; }
+.triage-metrics strong { font-size: 25px; }
+@media (max-width: 700px) { .triage-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
