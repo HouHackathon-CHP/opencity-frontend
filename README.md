@@ -6,6 +6,7 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 
 - A file-defined service catalog covering **60 service concepts in 12 categories**, transcribed and grouped from the screenshots supplied for the project. Each entry states whether it is available, planned, or awaiting a provider integration.
 - An `admin`-only `/admin` console shows tenant-scoped operational counts and links into the existing management modules. Keycloak continues to manage accounts and realm roles; this console does not store credentials or grant roles.
+- A hotline directory at `/hotlines` lets citizens find active support numbers; `hotlines_operator` or `admin` can add, edit and hide entries. The Android app opens the device dialer rather than placing calls automatically.
 - Search without Vietnamese diacritics, category filters, local favorites, responsive layout and service details.
 - A signed-in citizen creates a field report with optional image and browser location. A `reports_dispatcher` assigns a unit and deadline; the assigned `reports_operator` accepts, posts progress notes, requests a transfer or resolves it. The citizen sees the routing and workflow timeline. Coordinators can filter overdue cases.
 - Citizens and report staff have a map at `/reports/map` with report markers, cluster zoom, status filters, and a list that keeps reports without coordinates visible. Citizens see only their own reports; staff see only those allowed by their unit/role and can also filter by unit and deadline. Selecting a marker or list item opens the existing report detail. The map requires a browser with WebGL; its list remains usable if tiles cannot load.
@@ -54,6 +55,7 @@ come from `dxos-core/.env`; do not copy them into frontend configuration.
 | `dxos-appointments` | `DEMO_OPERATOR_PASSWORD` | `/appointments` |
 | `dxos-administrative-feedback` | `DEMO_OPERATOR_PASSWORD` | `/administrative-feedback` |
 | `dxos-business-feedback` | `DEMO_OPERATOR_PASSWORD` | `/business-feedback` |
+| `dxos-hotlines` | `DEMO_OPERATOR_PASSWORD` | `/hotlines` |
 
 Report unit staff see cases only after a dispatcher assigns them. For the
 business petition flow, submit with `dxos-citizen`, then sign in as

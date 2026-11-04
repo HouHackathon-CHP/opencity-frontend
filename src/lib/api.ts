@@ -45,6 +45,13 @@ export type AdminOverview = {
   business_feedback: { total: number; breakdown: Record<string, number> };
   bulletins: { total: number; breakdown: Record<string, number> };
   surveys: { total: number; breakdown: Record<string, number> };
+  hotlines: { total: number; breakdown: Record<string, number> };
+};
+
+export type Hotline = {
+  id: string; name: string; unit: string; phone: string;
+  area: string; hours: string; description: string; active: boolean;
+  updated_at: string;
 };
 
 export type TriageSuggestion = {
