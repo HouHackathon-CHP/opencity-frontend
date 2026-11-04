@@ -23,6 +23,7 @@ const AdminPage = React.lazy(() => import('./pages/AdminPage').then((module) => 
 const HotlinesPage = React.lazy(() => import('./pages/HotlinesPage').then((module) => ({ default: module.HotlinesPage })));
 const CommunicationsPage = React.lazy(() => import('./pages/CommunicationsPage').then((module) => ({ default: module.CommunicationsPage })));
 const CommunityGroupsPage = React.lazy(() => import('./pages/CommunityGroupsPage').then((module) => ({ default: module.CommunityGroupsPage })));
+const SocialFeedbackPage = React.lazy(() => import('./pages/SocialFeedbackPage').then((module) => ({ default: module.SocialFeedbackPage })));
 
 const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'reports', label: 'Xử lý phản ánh', href: '/reports' },
@@ -34,6 +35,7 @@ const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'hotlines', label: 'Đường dây nóng', href: '/hotlines' },
   { feature: 'communications', label: 'Thông tin truyền thông', href: '/communications' },
   { feature: 'community_groups', label: 'Nhóm cộng đồng', href: '/community/groups' },
+  { feature: 'social_feedback', label: 'Góp ý, phản biện xã hội', href: '/social-feedback' },
 ];
 
 function HomePage() {
@@ -97,6 +99,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/hotlines" element={<FeatureRoute feature="hotlines"><HotlinesPage /></FeatureRoute>} />
                 <Route path="/communications" element={<FeatureRoute feature="communications"><CommunicationsPage /></FeatureRoute>} />
                 <Route path="/community/groups" element={<FeatureRoute feature="community_groups"><CommunityGroupsPage /></FeatureRoute>} />
+                <Route path="/social-feedback" element={<FeatureRoute feature="social_feedback"><SocialFeedbackPage /></FeatureRoute>} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
                 <Route path="/reports/map" element={<FeatureRoute feature="reports"><ReportsMapPage /></FeatureRoute>} />
                 <Route path="/reports/dashboard" element={<ReportsManagementRoute><ReportsDashboardPage /></ReportsManagementRoute>} />
