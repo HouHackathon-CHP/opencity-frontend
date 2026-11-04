@@ -87,7 +87,7 @@ export type SurveyDetail = SurveySummary & {
   total_responses: number | null;
 };
 export type Bulletin = {
-  id: string; category: 'news' | 'alert'; title: string; summary: string; body: string;
+  id: string; category: 'news' | 'alert' | 'campaign'; title: string; summary: string; body: string;
   area: string | null; latitude: number | null; longitude: number | null; published_at: string;
 };
 
