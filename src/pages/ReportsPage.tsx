@@ -546,12 +546,10 @@ export function ReportsPage() {
                   <span>Dashboard SLA</span>
                 </Link>
               )}
-              {isOperator && (
-                <Link className="btn-outline" to="/reports/map">
-                  <MapPin size={16} />
-                  <span>Bản đồ điều hành</span>
-                </Link>
-              )}
+              <Link className="btn-outline" to="/reports/map">
+                <MapPin size={16} />
+                <span>{isOperator ? 'Bản đồ điều hành' : 'Bản đồ phản ánh của tôi'}</span>
+              </Link>
               <button
                 className="btn-outline"
                 type="button"
