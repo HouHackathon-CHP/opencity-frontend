@@ -37,6 +37,16 @@ export type ReportsDashboard = {
     priority: 'overdue' | 'due_soon' | 'unassigned' }[];
 };
 
+export type AdminOverview = {
+  generated_at: string;
+  reports: ReportsDashboard['counts'];
+  appointments: { total: number; breakdown: Record<string, number> };
+  administrative_feedback: { total: number; breakdown: Record<string, number> };
+  business_feedback: { total: number; breakdown: Record<string, number> };
+  bulletins: { total: number; breakdown: Record<string, number> };
+  surveys: { total: number; breakdown: Record<string, number> };
+};
+
 export type TriageSuggestion = {
   id: string; report_id: string; suggested_unit: string; model_version: string;
   source_updated_at: string; created_at: string; stale?: boolean;
