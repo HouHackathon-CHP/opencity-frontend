@@ -17,6 +17,7 @@ const modules = [
   { title: 'Đường dây nóng', href: '/hotlines', description: 'Cập nhật danh bạ liên hệ và giờ trực.' },
   { title: 'Thông tin truyền thông', href: '/communications', description: 'Phát hành thông tin và chiến dịch truyền thông.' },
   { title: 'Nhóm cộng đồng', href: '/community/groups', description: 'Tạo không gian trao đổi cho cư dân.' },
+  { title: 'Góp ý, phản biện xã hội', href: '/social-feedback', description: 'Mở chủ đề lấy ý kiến và theo dõi phản hồi.' },
 ];
 
 const identity = new URL(authority);
@@ -55,6 +56,7 @@ export function AdminPage() {
     { label: 'Khảo sát', value: overview.surveys.total, detail: `${overview.surveys.breakdown.open || 0} đang mở`, href: '/surveys' },
     { label: 'Đường dây nóng', value: overview.hotlines.total, detail: `${overview.hotlines.breakdown['1'] || 0} đang hiển thị`, href: '/hotlines' },
     { label: 'Nhóm cộng đồng', value: overview.community_groups.total, detail: 'Nhóm trong đơn vị', href: '/community/groups' },
+    { label: 'Chủ đề lấy ý kiến', value: overview.social_feedback.total, detail: `${overview.social_feedback.breakdown.open || 0} đang mở`, href: '/social-feedback' },
   ] : [];
 
   return <div className="admin-page page-width">

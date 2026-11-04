@@ -47,6 +47,16 @@ export type AdminOverview = {
   surveys: { total: number; breakdown: Record<string, number> };
   hotlines: { total: number; breakdown: Record<string, number> };
   community_groups: { total: number; breakdown: Record<string, number> };
+  social_feedback: { total: number; breakdown: Record<string, number> };
+};
+
+export type ConsultationTopic = {
+  id: string; title: string; description: string; area: string | null;
+  status: 'open' | 'closed'; created_at: string; closed_at: string | null;
+  opinion_count: number; my_opinion: { body: string; updated_at: string } | null;
+};
+export type ConsultationOpinion = {
+  id: string; topic_id: string; user_id: string; body: string; created_at: string; updated_at: string;
 };
 
 export type CommunityGroup = {

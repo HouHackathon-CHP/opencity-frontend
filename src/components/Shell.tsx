@@ -98,6 +98,9 @@ export function Shell() {
             {canSee('community_groups') && <NavLink to="/community/groups" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <Globe size={18} /><span>Cộng đồng</span>
             </NavLink>}
+            {canSee('social_feedback') && <NavLink to="/social-feedback" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              <Globe size={18} /><span>Góp ý xã hội</span>
+            </NavLink>}
           </nav>
 
           {/* User Account / Login Area */}
@@ -184,6 +187,7 @@ export function Shell() {
                 {canSee('hotlines') && <li><Link to="/hotlines">Danh bạ đường dây nóng</Link></li>}
                 {canSee('communications') && <li><Link to="/communications">Thông tin truyền thông</Link></li>}
                 {canSee('community_groups') && <li><Link to="/community/groups">Nhóm cộng đồng</Link></li>}
+                {canSee('social_feedback') && <li><Link to="/social-feedback">Góp ý, phản biện xã hội</Link></li>}
                 {!operator && <li><Link to="/#danh-muc">Danh mục dịch vụ số</Link></li>}
               </ul>
             </div>
