@@ -7,7 +7,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { canDispatch } from '../lib/permissions';
+import { canDispatch, canManage } from '../lib/permissions';
 import { reportStates, request, type Report } from '../lib/api';
 
 const unitNames: Record<string, string> = {
@@ -18,6 +18,7 @@ const unitNames: Record<string, string> = {
 };
 const osmTiles = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const tileUrl = import.meta.env.VITE_MAP_TILE_URL || osmTiles;
+const emptyReports: Report[] = [];
 
 function hasCoordinates(report: Report): report is Report & { latitude: number; longitude: number } {
   return typeof report.latitude === 'number' && Number.isFinite(report.latitude) &&
@@ -42,14 +43,16 @@ function reportLabel(report: Report): string {
 
 export function ReportsMapPage() {
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const token = user?.access_token || '';
   const dispatcher = canDispatch(user);
+  const manager = canManage(user, 'reports');
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [mapError, setMapError] = useState('');
-  const [reports, setReports] = useState<Report[]>([]);
+  const [reportCache, setReportCache] = useState<{ token: string; items: Report[] }>({ token: '', items: [] });
+  const reports = reportCache.token === token ? reportCache.items : emptyReports;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
@@ -61,12 +64,12 @@ export function ReportsMapPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!token) return;
+    if (!token) { setReportCache({ token: '', items: [] }); return; }
     setLoading(true);
     setError('');
     try {
       const data = await request<Report[]>('/api/opencity/reports', token);
-      setReports(data);
+      setReportCache({ token, items: data });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Không tải được hồ sơ phản ánh.');
     } finally {
@@ -81,13 +84,13 @@ export function ReportsMapPage() {
   const filtered = useMemo(() => reports.filter((report) => {
     const needle = query.trim().toLocaleLowerCase('vi-VN');
     return (category === 'all' || report.category === category) &&
-      (unit === 'all' || (report.assigned_unit || 'unassigned') === unit) &&
+      (!manager || unit === 'all' || (report.assigned_unit || 'unassigned') === unit) &&
       (state === 'all' || (state === 'open' ? report.state !== 'resolved' : (report.state || 'submitted') === state)) &&
-      (dueFilter === 'all' || (dueFilter === 'overdue' && isOverdue(report)) ||
+      (!manager || dueFilter === 'all' || (dueFilter === 'overdue' && isOverdue(report)) ||
         (dueFilter === 'due_soon' && isDueSoon(report))) &&
       (!needle || [report.id, report.title, report.address, report.category]
         .some((value) => value.toLocaleLowerCase('vi-VN').includes(needle)));
-  }), [reports, query, category, unit, state, dueFilter]);
+  }), [reports, query, category, unit, state, dueFilter, manager]);
   const located = useMemo(() => filtered.filter(hasCoordinates), [filtered]);
   const withoutCoordinates = useMemo(() => filtered.filter((report) => !hasCoordinates(report)), [filtered]);
   const visibleList = listMode === 'all' ? filtered : withoutCoordinates;
@@ -203,12 +206,13 @@ export function ReportsMapPage() {
 
   return (
     <div className="reports-map-page page-width">
-      <div className="page-breadcrumb"><Link className="breadcrumb-link" to="/reports">Phản ánh hiện trường</Link><span> / Bản đồ điều hành</span></div>
+      <div className="page-breadcrumb"><Link className="breadcrumb-link" to="/reports">Phản ánh hiện trường</Link><span> / {manager ? 'Bản đồ điều hành' : 'Bản đồ phản ánh của tôi'}</span></div>
       <div className="reports-map-heading">
         <div>
-          <p className="reports-map-eyebrow">ĐIỀU HÀNH PHẢN ÁNH</p>
-          <h1>Bản đồ hiện trường</h1>
-          <p>Dữ liệu hồ sơ được giới hạn theo quyền và đơn vị của tài khoản đang đăng nhập.</p>
+          <p className="reports-map-eyebrow">{manager ? 'ĐIỀU HÀNH PHẢN ÁNH' : 'THEO DÕI PHẢN ÁNH'}</p>
+          <h1>{manager ? 'Bản đồ hiện trường' : 'Bản đồ phản ánh của tôi'}</h1>
+          <p>{manager ? 'Dữ liệu hồ sơ được giới hạn theo quyền và đơn vị của tài khoản đang đăng nhập.'
+            : 'Xem vị trí và trạng thái các phản ánh bạn đã gửi. Chỉ bạn và cán bộ có thẩm quyền xem được hồ sơ.'}</p>
         </div>
         <div className="reports-map-heading-actions">
           <button type="button" className="btn-outline" onClick={() => void refresh()} disabled={loading}>
@@ -218,6 +222,10 @@ export function ReportsMapPage() {
         </div>
       </div>
 
+      {!user && <section className="appointment-panel">
+        <h2>Đăng nhập để xem phản ánh của bạn trên bản đồ</h2>
+        <button className="btn-primary" type="button" disabled={authLoading} onClick={() => void login()}>Đăng nhập</button>
+      </section>}
       {error && <div className="alert-box alert-error" role="alert"><TriangleAlert size={18} />{error}</div>}
       <div className="reports-map-stats" aria-label="Thống kê theo bộ lọc">
         <div><strong>{filtered.length}</strong><span>Hồ sơ</span></div>
@@ -231,20 +239,20 @@ export function ReportsMapPage() {
         <label>Lĩnh vực<select value={category} onChange={(event) => setCategory(event.target.value)}>
           <option value="all">Tất cả lĩnh vực</option>{categories.map((value) => <option key={value} value={value}>{value}</option>)}
         </select></label>
-        <label>Đơn vị<select value={unit} onChange={(event) => setUnit(event.target.value)}>
+        {manager && <label>Đơn vị<select value={unit} onChange={(event) => setUnit(event.target.value)}>
           <option value="all">Tất cả đơn vị được xem</option>
           {units.map((value) => <option key={value} value={value}>{value === 'unassigned' ? 'Không gắn đơn vị' : unitNames[value] || value}</option>)}
-        </select></label>
+        </select></label>}
         <label>Trạng thái<select value={state} onChange={(event) => setState(event.target.value)}>
           <option value="all">Tất cả trạng thái</option>
           <option value="open">Chưa hoàn tất</option>
           {Object.entries(reportStates).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>
-        <label>Hạn xử lý<select value={dueFilter} onChange={(event) => setDueFilter(event.target.value)}>
+        {manager && <label>Hạn xử lý<select value={dueFilter} onChange={(event) => setDueFilter(event.target.value)}>
           <option value="all">Tất cả hạn xử lý</option>
           <option value="due_soon">Sắp đến hạn (24 giờ)</option>
           <option value="overdue">Đã quá hạn</option>
-        </select></label>
+        </select></label>}
       </section>
 
       <div className="reports-map-layout">
@@ -258,7 +266,7 @@ export function ReportsMapPage() {
               <strong>{selected.title}</strong>
               <small>{selected.address || 'Chưa có địa chỉ'} · {reportLabel(selected)}</small>
               <Link className="btn-primary" to={`/reports?report=${encodeURIComponent(selected.id)}`}>
-                {dispatcher ? 'Mở hồ sơ / phân công' : 'Mở hồ sơ xử lý'}
+                {dispatcher ? 'Mở hồ sơ / phân công' : manager ? 'Mở hồ sơ xử lý' : 'Mở hồ sơ của tôi'}
               </Link>
             </div>
           )}
@@ -278,7 +286,7 @@ export function ReportsMapPage() {
                 className={`reports-map-item ${selectedId === report.id ? 'selected' : ''}`}>
                 <span className="reports-map-item-top"><strong>{report.title}</strong>{isOverdue(report) && <em>Quá hạn</em>}</span>
                 <span>{report.address || 'Chưa có địa chỉ'}</span>
-                <small><span>{reportLabel(report)}</span><span>{unitNames[report.assigned_unit || ''] || 'Chưa phân công'}</span></small>
+                <small><span>{reportLabel(report)}</span>{manager && <span>{unitNames[report.assigned_unit || ''] || 'Chưa phân công'}</span>}</small>
                 <span className="reports-map-item-location">{hasCoordinates(report) ? <><MapPin size={13} /> Có tọa độ</> : <><Clock3 size={13} /> Chưa có tọa độ</>}</span>
               </button>
             ))}

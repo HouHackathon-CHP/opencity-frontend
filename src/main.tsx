@@ -77,7 +77,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
               <Route element={<Shell />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
-                <Route path="/reports/map" element={<ReportsManagementRoute><ReportsMapPage /></ReportsManagementRoute>} />
+                <Route path="/reports/map" element={<FeatureRoute feature="reports"><ReportsMapPage /></FeatureRoute>} />
                 <Route path="/reports/dashboard" element={<ReportsManagementRoute><ReportsDashboardPage /></ReportsManagementRoute>} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/surveys" element={<FeatureRoute feature="surveys"><SurveysPage /></FeatureRoute>} />

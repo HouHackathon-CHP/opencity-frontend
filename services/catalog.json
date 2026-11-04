@@ -20,7 +20,7 @@
     { "id": "administrative-feedback", "category": "feedback", "name": "Phản ánh thủ tục hành chính", "description": "Gửi, theo dõi và phản hồi về quy trình hoặc chất lượng phục vụ trong OpenCity.", "icon": "FileWarning", "kind": "native", "status": "available", "route": "/administrative-feedback" },
     { "id": "citizen-appointment", "category": "feedback", "name": "Đăng ký tiếp công dân", "description": "Gửi yêu cầu chọn khung giờ tiếp công dân và theo dõi xác nhận trong OpenCity.", "icon": "CalendarDays", "kind": "native", "status": "available", "route": "/appointments" },
     { "id": "business-feedback", "category": "feedback", "name": "Doanh nghiệp kiến nghị", "description": "Kênh kiến nghị dành cho doanh nghiệp.", "icon": "BriefcaseBusiness", "kind": "native", "status": "planned" },
-    { "id": "report-map", "category": "feedback", "name": "Bản đồ phản ánh", "description": "Theo dõi phản ánh theo khu vực và trạng thái.", "icon": "MapPinned", "kind": "native", "status": "planned" },
+    { "id": "report-map", "category": "feedback", "name": "Bản đồ phản ánh", "description": "Xem phản ánh của bạn theo vị trí và trạng thái trên bản đồ.", "icon": "MapPinned", "kind": "native", "status": "available", "route": "/reports/map" },
 
     { "id": "public-services", "category": "public-service", "name": "Dịch vụ công", "description": "Cổng truy cập các thủ tục trực tuyến.", "icon": "Landmark", "kind": "connector", "status": "needs-integration" },
     { "id": "service-booking", "category": "public-service", "name": "Đặt lịch thực hiện DVC", "description": "Đăng ký khung giờ làm thủ tục.", "icon": "CalendarCheck", "kind": "connector", "status": "needs-integration" },
