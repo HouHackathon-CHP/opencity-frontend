@@ -56,7 +56,7 @@
     { "id": "pharmacies", "category": "health", "name": "Cơ sở dược", "description": "Tra cứu cơ sở dược.", "icon": "Pill", "kind": "connector", "status": "needs-integration" },
     { "id": "health-portal", "category": "health", "name": "Cổng sức khỏe", "description": "Thông tin sức khỏe từ đơn vị cung cấp.", "icon": "Globe", "kind": "link", "status": "needs-integration" },
 
-    { "id": "community-groups", "category": "community", "name": "Nhóm cộng đồng", "description": "Không gian tương tác cho các nhóm địa phương.", "icon": "UsersRound", "kind": "native", "status": "planned" },
+    { "id": "community-groups", "category": "community", "name": "Nhóm cộng đồng", "description": "Tham gia nhóm và trao đổi cùng cư dân trong địa bàn.", "icon": "UsersRound", "kind": "native", "status": "available", "route": "/community/groups" },
     { "id": "social-feedback", "category": "community", "name": "Góp ý, phản biện xã hội", "description": "Thu nhận ý kiến theo từng chủ đề.", "icon": "MessagesSquare", "kind": "native", "status": "planned" },
     { "id": "digital-ward", "category": "community", "name": "Xã/phường số", "description": "Trang thông tin và dịch vụ cấp cơ sở.", "icon": "House", "kind": "native", "status": "planned" },
     { "id": "front-organizations", "category": "community", "name": "Mặt trận và đoàn thể", "description": "Mặt trận, công đoàn, phụ nữ, nông dân, cựu chiến binh và thanh niên.", "icon": "HandHeart", "kind": "link", "status": "needs-integration" },
