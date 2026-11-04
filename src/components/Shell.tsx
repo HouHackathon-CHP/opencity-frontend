@@ -101,6 +101,9 @@ export function Shell() {
             {canSee('social_feedback') && <NavLink to="/social-feedback" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <Globe size={18} /><span>Góp ý xã hội</span>
             </NavLink>}
+            {canSee('digital_ward') && <NavLink to="/digital-wards" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              <MapPin size={18} /><span>Xã/phường số</span>
+            </NavLink>}
           </nav>
 
           {/* User Account / Login Area */}
@@ -188,6 +191,7 @@ export function Shell() {
                 {canSee('communications') && <li><Link to="/communications">Thông tin truyền thông</Link></li>}
                 {canSee('community_groups') && <li><Link to="/community/groups">Nhóm cộng đồng</Link></li>}
                 {canSee('social_feedback') && <li><Link to="/social-feedback">Góp ý, phản biện xã hội</Link></li>}
+                {canSee('digital_ward') && <li><Link to="/digital-wards">Xã/phường số</Link></li>}
                 {!operator && <li><Link to="/#danh-muc">Danh mục dịch vụ số</Link></li>}
               </ul>
             </div>

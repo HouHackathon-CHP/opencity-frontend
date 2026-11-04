@@ -48,6 +48,13 @@ export type AdminOverview = {
   hotlines: { total: number; breakdown: Record<string, number> };
   community_groups: { total: number; breakdown: Record<string, number> };
   social_feedback: { total: number; breakdown: Record<string, number> };
+  digital_ward: { total: number; breakdown: Record<string, number> };
+};
+
+export type DigitalWard = {
+  id: string; code: string; name: string; address: string; phone: string;
+  office_hours: string; description: string; latitude: number | null;
+  longitude: number | null; active: boolean; updated_at: string;
 };
 
 export type ConsultationTopic = {

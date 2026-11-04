@@ -2,7 +2,7 @@
 import type { User } from 'oidc-client-ts';
 import { rolesOf, unitOf } from './auth';
 
-export type Feature = 'reports' | 'administrative_feedback' | 'business_feedback' | 'bulletins' | 'surveys' | 'appointments' | 'hotlines' | 'communications' | 'community_groups' | 'social_feedback';
+export type Feature = 'reports' | 'administrative_feedback' | 'business_feedback' | 'bulletins' | 'surveys' | 'appointments' | 'hotlines' | 'communications' | 'community_groups' | 'social_feedback' | 'digital_ward';
 const featureRoles: Record<Feature, string> = {
   reports: 'reports_operator',
   administrative_feedback: 'administrative_feedback_operator',
@@ -14,6 +14,7 @@ const featureRoles: Record<Feature, string> = {
   communications: 'communications_operator',
   community_groups: 'community_groups_operator',
   social_feedback: 'social_feedback_operator',
+  digital_ward: 'digital_ward_operator',
 };
 const reportUnits = new Set(['infrastructure', 'environment', 'transport', 'intake']);
 

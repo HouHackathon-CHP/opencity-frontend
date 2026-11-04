@@ -18,6 +18,7 @@ const modules = [
   { title: 'Thông tin truyền thông', href: '/communications', description: 'Phát hành thông tin và chiến dịch truyền thông.' },
   { title: 'Nhóm cộng đồng', href: '/community/groups', description: 'Tạo không gian trao đổi cho cư dân.' },
   { title: 'Góp ý, phản biện xã hội', href: '/social-feedback', description: 'Mở chủ đề lấy ý kiến và theo dõi phản hồi.' },
+  { title: 'Xã/phường số', href: '/digital-wards', description: 'Cập nhật điểm phục vụ và thông tin cấp cơ sở.' },
 ];
 
 const identity = new URL(authority);
@@ -57,6 +58,7 @@ export function AdminPage() {
     { label: 'Đường dây nóng', value: overview.hotlines.total, detail: `${overview.hotlines.breakdown['1'] || 0} đang hiển thị`, href: '/hotlines' },
     { label: 'Nhóm cộng đồng', value: overview.community_groups.total, detail: 'Nhóm trong đơn vị', href: '/community/groups' },
     { label: 'Chủ đề lấy ý kiến', value: overview.social_feedback.total, detail: `${overview.social_feedback.breakdown.open || 0} đang mở`, href: '/social-feedback' },
+    { label: 'Xã/phường số', value: overview.digital_ward.total, detail: `${overview.digital_ward.breakdown['1'] || 0} đang hiển thị`, href: '/digital-wards' },
   ] : [];
 
   return <div className="admin-page page-width">
