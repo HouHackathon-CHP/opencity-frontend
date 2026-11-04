@@ -15,10 +15,15 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 - `bulletins_operator` can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
 - `appointments_operator` opens citizen reception slots and confirms or rejects requests. Citizens can request an available slot and track or cancel their own appointment. This is a local OpenCity workflow, not an official public-service booking integration.
 - Citizens can submit administrative-procedure feedback and follow staff responses. `administrative_feedback_operator` has its own management page and role; a citizen can request clarification or close an answered case.
+- Business representatives can submit petitions with self-declared company details on the web. `business_feedback_operator` reviews them, requests information and responds; the submitter can provide information, ask for another review or close the case. Tax codes are format-checked, not checked against an official registry.
 - Staff accounts see only their granted management pages. Each page is loaded on demand. The backend enforces the same permissions on every management action.
 - OIDC Authorization Code + PKCE sign-in through the existing `dxos-web` Keycloak client. The browser calls only the OpenCity routes at the DX-OS gateway; it does not orchestrate generic data/workflow APIs. No mock login or privileged client secret is stored in the portal.
 
 The other catalog tiles are **not** presented as working services. Integrations with public service, health, transport, payments or official sources require an approved provider URL/API and data access agreement before enabling.
+
+The catalog currently has **8 available entries** backed by 7 local routes. News
+and warnings share `/bulletins`; the remaining catalog entries are planned or
+need a provider integration.
 
 ## Run locally
 
@@ -35,7 +40,26 @@ npm run dev
 
 Open <http://localhost:3000>. Use `localhost` for browser sign-in: it is the local origin registered with Keycloak and allowed by the gateway. Visits to `http://127.0.0.1:3000` are redirected there before OIDC begins. The catalog renders without the backend. Authentication and reporting require Keycloak at `http://localhost:8081`, gateway at `http://localhost:8000` and `opencity-backend` on the Compose network. For production, configure a HTTPS origin in this portal, Keycloak's `dxos-web` redirect/web origins, and gateway CORS together.
 
-For role testing, run `python scripts/smoke_app.py` in `opencity-backend`, then sign in as `dxos-dispatcher` (all tenant reports), `dxos-reports` (hạ tầng/chiếu sáng), `dxos-reports-environment` (môi trường/cây xanh), `dxos-bulletins`, `dxos-surveys`, or `dxos-appointments` using the local `DEMO_OPERATOR_PASSWORD` from `dxos-core/.env`. Report staff see cases only after a dispatcher assigns them to their unit. Sign out and back in after changing roles or `unit_id` in Keycloak so the browser receives a fresh access token.
+For role testing, run `python scripts/smoke_app.py` in `opencity-backend`
+after the core smoke script. It provisions the local operator accounts. Passwords
+come from `dxos-core/.env`; do not copy them into frontend configuration.
+
+| Demo account | Password variable | Page to test |
+| --- | --- | --- |
+| `dxos-citizen` | `DEMO_CITIZEN_PASSWORD` | `/reports`, `/reports/map`, `/administrative-feedback`, `/business-feedback`, `/appointments` |
+| `dxos-dispatcher` | `DEMO_OPERATOR_PASSWORD` | Dispatch and SLA dashboard at `/reports` |
+| `dxos-reports`, `dxos-reports-environment` | `DEMO_OPERATOR_PASSWORD` | Assigned unit reports at `/reports` |
+| `dxos-bulletins`, `dxos-surveys` | `DEMO_OPERATOR_PASSWORD` | `/bulletins`, `/surveys` |
+| `dxos-appointments` | `DEMO_OPERATOR_PASSWORD` | `/appointments` |
+| `dxos-administrative-feedback` | `DEMO_OPERATOR_PASSWORD` | `/administrative-feedback` |
+| `dxos-business-feedback` | `DEMO_OPERATOR_PASSWORD` | `/business-feedback` |
+
+Report unit staff see cases only after a dispatcher assigns them. For the
+business petition flow, submit with `dxos-citizen`, then sign in as
+`dxos-business-feedback` to review or request more information; sign in again
+as the citizen to reply. The same pattern applies to administrative feedback
+with its dedicated operator. Sign out and back in after changing roles or
+`unit_id` in Keycloak so the browser receives a fresh access token.
 
 For a varied local map and SLA dashboard, run `python scripts/seed_dashboard_demo.py` once in `opencity-backend`. It is safe to rerun: existing `[DEMO SLA]` reports are reused without resetting deadlines.
 

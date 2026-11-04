@@ -94,6 +94,16 @@ export type AdministrativeFeedback = {
   history: { action: string; actor: string; note: string | null; created_at: string }[];
 };
 
+export type BusinessPetition = {
+  id: string; tenant: string; user_id: string; company_name: string;
+  tax_code: string; representative: string;
+  sector: 'investment' | 'tax' | 'land' | 'labor' | 'other';
+  title: string; description: string; requested_resolution: string;
+  status: 'submitted' | 'in_review' | 'needs_info' | 'resolved' | 'closed';
+  response: string | null; created_at: string; updated_at: string;
+  history: { action: string; actor: string; note: string | null; created_at: string }[];
+};
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
