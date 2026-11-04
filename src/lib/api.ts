@@ -46,7 +46,14 @@ export type AdminOverview = {
   bulletins: { total: number; breakdown: Record<string, number> };
   surveys: { total: number; breakdown: Record<string, number> };
   hotlines: { total: number; breakdown: Record<string, number> };
+  community_groups: { total: number; breakdown: Record<string, number> };
 };
+
+export type CommunityGroup = {
+  id: string; tenant: string; title: string; description: string; area: string | null;
+  created_by: string; created_at: string; member_count: number; joined: boolean;
+};
+export type CommunityPost = { id: string; group_id: string; user_id: string; body: string; created_at: string };
 
 export type Hotline = {
   id: string; name: string; unit: string; phone: string;

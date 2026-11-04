@@ -95,6 +95,9 @@ export function Shell() {
             {canSee('communications') && <NavLink to="/communications" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <Newspaper size={18} /><span>Truyền thông</span>
             </NavLink>}
+            {canSee('community_groups') && <NavLink to="/community/groups" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              <Globe size={18} /><span>Cộng đồng</span>
+            </NavLink>}
           </nav>
 
           {/* User Account / Login Area */}
@@ -180,6 +183,7 @@ export function Shell() {
                 {canSee('appointments') && <li><Link to="/appointments">Đăng ký tiếp công dân</Link></li>}
                 {canSee('hotlines') && <li><Link to="/hotlines">Danh bạ đường dây nóng</Link></li>}
                 {canSee('communications') && <li><Link to="/communications">Thông tin truyền thông</Link></li>}
+                {canSee('community_groups') && <li><Link to="/community/groups">Nhóm cộng đồng</Link></li>}
                 {!operator && <li><Link to="/#danh-muc">Danh mục dịch vụ số</Link></li>}
               </ul>
             </div>
