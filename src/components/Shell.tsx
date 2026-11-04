@@ -162,6 +162,7 @@ export function Shell() {
               <h4>Kênh tương tác</h4>
               <ul>
                 {canSee('reports') && <li><Link to="/reports">Phản ánh hiện trường</Link></li>}
+                {canSee('administrative_feedback') && <li><Link to="/administrative-feedback">Phản ánh thủ tục hành chính</Link></li>}
                 {canSee('surveys') && <li><Link to="/surveys">Khảo sát & Lấy ý kiến</Link></li>}
                 {canSee('bulletins') && <li><Link to="/bulletins">Bản tin & Cảnh báo khu vực</Link></li>}
                 {canSee('appointments') && <li><Link to="/appointments">Đăng ký tiếp công dân</Link></li>}
