@@ -20,6 +20,7 @@ const AppointmentsPage = React.lazy(() => import('./pages/AppointmentsPage').the
 const AdministrativeFeedbackPage = React.lazy(() => import('./pages/AdministrativeFeedbackPage').then((module) => ({ default: module.AdministrativeFeedbackPage })));
 const BusinessFeedbackPage = React.lazy(() => import('./pages/BusinessFeedbackPage').then((module) => ({ default: module.BusinessFeedbackPage })));
 const AdminPage = React.lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })));
+const HotlinesPage = React.lazy(() => import('./pages/HotlinesPage').then((module) => ({ default: module.HotlinesPage })));
 
 const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'reports', label: 'Xử lý phản ánh', href: '/reports' },
@@ -28,6 +29,7 @@ const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'bulletins', label: 'Phát hành tin & cảnh báo', href: '/bulletins' },
   { feature: 'surveys', label: 'Điều hành khảo sát', href: '/surveys' },
   { feature: 'appointments', label: 'Tiếp công dân', href: '/appointments' },
+  { feature: 'hotlines', label: 'Đường dây nóng', href: '/hotlines' },
 ];
 
 function HomePage() {
@@ -88,6 +90,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
               <Route element={<Shell />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+                <Route path="/hotlines" element={<FeatureRoute feature="hotlines"><HotlinesPage /></FeatureRoute>} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
                 <Route path="/reports/map" element={<FeatureRoute feature="reports"><ReportsMapPage /></FeatureRoute>} />
                 <Route path="/reports/dashboard" element={<ReportsManagementRoute><ReportsDashboardPage /></ReportsManagementRoute>} />

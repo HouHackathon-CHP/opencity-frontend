@@ -14,6 +14,7 @@ const modules = [
   { title: 'Lịch tiếp công dân', href: '/appointments', description: 'Mở khung giờ và duyệt lịch hẹn.' },
   { title: 'Tin tức & cảnh báo', href: '/bulletins', description: 'Đăng thông tin trong phạm vi tenant.' },
   { title: 'Khảo sát ý kiến', href: '/surveys', description: 'Tạo khảo sát và xem kết quả.' },
+  { title: 'Đường dây nóng', href: '/hotlines', description: 'Cập nhật danh bạ liên hệ và giờ trực.' },
 ];
 
 const identity = new URL(authority);
@@ -50,6 +51,7 @@ export function AdminPage() {
     { label: 'Kiến nghị doanh nghiệp', value: overview.business_feedback.total, detail: `${overview.business_feedback.breakdown.submitted || 0} mới gửi`, href: '/business-feedback' },
     { label: 'Tin & cảnh báo', value: overview.bulletins.total, detail: 'Đã phát hành', href: '/bulletins' },
     { label: 'Khảo sát', value: overview.surveys.total, detail: `${overview.surveys.breakdown.open || 0} đang mở`, href: '/surveys' },
+    { label: 'Đường dây nóng', value: overview.hotlines.total, detail: `${overview.hotlines.breakdown['1'] || 0} đang hiển thị`, href: '/hotlines' },
   ] : [];
 
   return <div className="admin-page page-width">
