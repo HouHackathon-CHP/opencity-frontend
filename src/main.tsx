@@ -17,10 +17,12 @@ const BulletinsPage = React.lazy(() => import('./pages/BulletinsPage').then((mod
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage').then((module) => ({ default: module.NotificationsPage })));
 const AppointmentsPage = React.lazy(() => import('./pages/AppointmentsPage').then((module) => ({ default: module.AppointmentsPage })));
 const AdministrativeFeedbackPage = React.lazy(() => import('./pages/AdministrativeFeedbackPage').then((module) => ({ default: module.AdministrativeFeedbackPage })));
+const BusinessFeedbackPage = React.lazy(() => import('./pages/BusinessFeedbackPage').then((module) => ({ default: module.BusinessFeedbackPage })));
 
 const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'reports', label: 'Xử lý phản ánh', href: '/reports' },
   { feature: 'administrative_feedback', label: 'Phản ánh thủ tục hành chính', href: '/administrative-feedback' },
+  { feature: 'business_feedback', label: 'Kiến nghị doanh nghiệp', href: '/business-feedback' },
   { feature: 'bulletins', label: 'Phát hành tin & cảnh báo', href: '/bulletins' },
   { feature: 'surveys', label: 'Điều hành khảo sát', href: '/surveys' },
   { feature: 'appointments', label: 'Tiếp công dân', href: '/appointments' },
@@ -83,6 +85,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/surveys" element={<FeatureRoute feature="surveys"><SurveysPage /></FeatureRoute>} />
                 <Route path="/appointments" element={<FeatureRoute feature="appointments"><AppointmentsPage /></FeatureRoute>} />
                 <Route path="/administrative-feedback" element={<FeatureRoute feature="administrative_feedback"><AdministrativeFeedbackPage /></FeatureRoute>} />
+                <Route path="/business-feedback" element={<FeatureRoute feature="business_feedback"><BusinessFeedbackPage /></FeatureRoute>} />
                 <Route path="/bulletins" element={<FeatureRoute feature="bulletins"><BulletinsPage /></FeatureRoute>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

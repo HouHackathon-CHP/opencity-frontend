@@ -3509,3 +3509,10 @@ a {
 .administrative-feedback-history li p { margin-top: 5px; white-space: pre-wrap; }
 @media (max-width: 820px) { .administrative-feedback-layout { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .administrative-feedback-form { grid-template-columns: 1fr; } .administrative-feedback-wide { grid-column: auto; } .administrative-feedback-item { flex-wrap: wrap; } }
+.business-feedback-filters { display: grid; grid-template-columns: minmax(0, 2fr) minmax(180px, 1fr); gap: 14px; margin: 4px 0 18px; }
+.business-feedback-filters label { display: grid; gap: 7px; color: var(--color-text-main); font-size: 13px; font-weight: 650; }
+.business-feedback-filters input, .business-feedback-filters select { width: 100%; border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; background: white; color: var(--color-text-main); font: inherit; }
+.business-feedback-page .status-needs_info { background: #fff7ed; color: #9a3412; }
+.business-feedback-page .status-resolved { background: #dcfce7; color: #166534; }
+.business-feedback-page .status-closed { background: #f1f5f9; color: #475569; }
+@media (max-width: 600px) { .business-feedback-filters { grid-template-columns: 1fr; } }

@@ -15,6 +15,7 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 - `bulletins_operator` can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
 - `appointments_operator` opens citizen reception slots and confirms or rejects requests. Citizens can request an available slot and track or cancel their own appointment. This is a local OpenCity workflow, not an official public-service booking integration.
 - Citizens can submit administrative-procedure feedback and follow staff responses. `administrative_feedback_operator` has its own management page and role; a citizen can request clarification or close an answered case.
+- Business representatives can submit petitions with self-declared company details on the web. `business_feedback_operator` reviews them, requests information and responds; the submitter can provide information, ask for another review or close the case. Tax codes are format-checked, not checked against an official registry.
 - Staff accounts see only their granted management pages. Each page is loaded on demand. The backend enforces the same permissions on every management action.
 - OIDC Authorization Code + PKCE sign-in through the existing `dxos-web` Keycloak client. The browser calls only the OpenCity routes at the DX-OS gateway; it does not orchestrate generic data/workflow APIs. No mock login or privileged client secret is stored in the portal.
 

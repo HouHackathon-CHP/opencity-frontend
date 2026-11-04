@@ -163,6 +163,7 @@ export function Shell() {
               <ul>
                 {canSee('reports') && <li><Link to="/reports">Phản ánh hiện trường</Link></li>}
                 {canSee('administrative_feedback') && <li><Link to="/administrative-feedback">Phản ánh thủ tục hành chính</Link></li>}
+                {canSee('business_feedback') && <li><Link to="/business-feedback">Doanh nghiệp kiến nghị</Link></li>}
                 {canSee('surveys') && <li><Link to="/surveys">Khảo sát & Lấy ý kiến</Link></li>}
                 {canSee('bulletins') && <li><Link to="/bulletins">Bản tin & Cảnh báo khu vực</Link></li>}
                 {canSee('appointments') && <li><Link to="/appointments">Đăng ký tiếp công dân</Link></li>}
