@@ -86,6 +86,14 @@ export type Appointment = {
   review_note: string | null; cancelled_at: string | null;
 };
 
+export type AdministrativeFeedback = {
+  id: string; tenant: string; user_id: string; title: string; procedure: string;
+  agency: string; issue_type: 'delay' | 'instructions' | 'conduct' | 'other';
+  description: string; status: 'submitted' | 'in_review' | 'answered' | 'closed';
+  response: string | null; created_at: string; updated_at: string;
+  history: { action: string; actor: string; note: string | null; created_at: string }[];
+};
+
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }
 }
