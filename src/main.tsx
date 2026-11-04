@@ -5,6 +5,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './components/AuthProvider';
 import { Shell } from './components/Shell';
 import { AuthCallback } from './pages/AuthCallback';
+import { rolesOf } from './lib/auth';
 import { canManage, canOpenFeature, managementOf, type Feature } from './lib/permissions';
 import './style.css';
 
@@ -18,6 +19,7 @@ const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage').t
 const AppointmentsPage = React.lazy(() => import('./pages/AppointmentsPage').then((module) => ({ default: module.AppointmentsPage })));
 const AdministrativeFeedbackPage = React.lazy(() => import('./pages/AdministrativeFeedbackPage').then((module) => ({ default: module.AdministrativeFeedbackPage })));
 const BusinessFeedbackPage = React.lazy(() => import('./pages/BusinessFeedbackPage').then((module) => ({ default: module.BusinessFeedbackPage })));
+const AdminPage = React.lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })));
 
 const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'reports', label: 'Xử lý phản ánh', href: '/reports' },
@@ -31,6 +33,7 @@ const managementLinks: { feature: Feature; label: string; href: string }[] = [
 function HomePage() {
   const { user, loading } = useAuth();
   if (loading) return null;
+  if (rolesOf(user).includes('admin')) return <Navigate to="/admin" replace />;
   const management = managementOf(user);
   if (management.length === 0) return <CatalogPage />;
   return (
@@ -63,6 +66,12 @@ function ReportsManagementRoute({ children }: { children: React.ReactNode }) {
   return canManage(user, 'reports') ? children : <Navigate to="/" replace />;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return rolesOf(user).includes('admin') ? children : <Navigate to="/" replace />;
+}
+
 // OIDC state is stored per origin. Use the one origin registered in Keycloak.
 if (window.location.hostname === '127.0.0.1' && window.location.port === '3000') {
   const canonicalUrl = new URL(window.location.href);
@@ -78,6 +87,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route element={<Shell />}>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
                 <Route path="/reports/map" element={<FeatureRoute feature="reports"><ReportsMapPage /></FeatureRoute>} />
                 <Route path="/reports/dashboard" element={<ReportsManagementRoute><ReportsDashboardPage /></ReportsManagementRoute>} />

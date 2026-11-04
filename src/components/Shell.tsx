@@ -4,6 +4,7 @@ import { ArrowRight, Bell, CalendarDays, ClipboardList, ExternalLink, Globe, Lay
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { displayName } from '../lib/auth';
+import { rolesOf } from '../lib/auth';
 import { canOpenFeature, managementOf, type Feature } from '../lib/permissions';
 import { Logo } from './Logo';
 import { request, type Notification } from '../lib/api';
@@ -11,6 +12,7 @@ import { request, type Notification } from '../lib/api';
 export function Shell() {
   const { user, loading, login, logout } = useAuth();
   const operator = managementOf(user).length > 0;
+  const admin = rolesOf(user).includes('admin');
   const canSee = (feature: Feature) => !loading && canOpenFeature(user, feature);
   const location = useLocation();
   const [unread, setUnread] = useState(0);
@@ -66,8 +68,11 @@ export function Shell() {
           <nav className="desktop-nav" aria-label="Điều hướng chính">
             <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <LayoutGrid size={18} />
-              <span>{operator ? 'Vận hành' : 'Dịch vụ'}</span>
+              <span>{admin ? 'Quản trị' : operator ? 'Vận hành' : 'Dịch vụ'}</span>
             </NavLink>
+            {admin && <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              <Shield size={18} /><span>Hệ thống</span>
+            </NavLink>}
             {canSee('reports') && <NavLink to="/reports" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <MapPin size={18} />
               <span>Phản ánh hiện trường</span>
@@ -206,7 +211,7 @@ export function Shell() {
       <nav className="mobile-nav" aria-label="Điều hướng di động">
         <NavLink to="/" end className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <LayoutGrid size={20} />
-          <span>{operator ? 'Vận hành' : 'Dịch vụ'}</span>
+          <span>{admin ? 'Quản trị' : operator ? 'Vận hành' : 'Dịch vụ'}</span>
         </NavLink>
         {canSee('reports') && <NavLink to="/reports" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
           <MapPin size={20} />
