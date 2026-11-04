@@ -21,6 +21,7 @@ const AdministrativeFeedbackPage = React.lazy(() => import('./pages/Administrati
 const BusinessFeedbackPage = React.lazy(() => import('./pages/BusinessFeedbackPage').then((module) => ({ default: module.BusinessFeedbackPage })));
 const AdminPage = React.lazy(() => import('./pages/AdminPage').then((module) => ({ default: module.AdminPage })));
 const HotlinesPage = React.lazy(() => import('./pages/HotlinesPage').then((module) => ({ default: module.HotlinesPage })));
+const CommunicationsPage = React.lazy(() => import('./pages/CommunicationsPage').then((module) => ({ default: module.CommunicationsPage })));
 
 const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'reports', label: 'Xử lý phản ánh', href: '/reports' },
@@ -30,6 +31,7 @@ const managementLinks: { feature: Feature; label: string; href: string }[] = [
   { feature: 'surveys', label: 'Điều hành khảo sát', href: '/surveys' },
   { feature: 'appointments', label: 'Tiếp công dân', href: '/appointments' },
   { feature: 'hotlines', label: 'Đường dây nóng', href: '/hotlines' },
+  { feature: 'communications', label: 'Thông tin truyền thông', href: '/communications' },
 ];
 
 function HomePage() {
@@ -91,6 +93,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/" element={<HomePage />} />
                 <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
                 <Route path="/hotlines" element={<FeatureRoute feature="hotlines"><HotlinesPage /></FeatureRoute>} />
+                <Route path="/communications" element={<FeatureRoute feature="communications"><CommunicationsPage /></FeatureRoute>} />
                 <Route path="/reports" element={<FeatureRoute feature="reports"><ReportsPage /></FeatureRoute>} />
                 <Route path="/reports/map" element={<FeatureRoute feature="reports"><ReportsMapPage /></FeatureRoute>} />
                 <Route path="/reports/dashboard" element={<ReportsManagementRoute><ReportsDashboardPage /></ReportsManagementRoute>} />

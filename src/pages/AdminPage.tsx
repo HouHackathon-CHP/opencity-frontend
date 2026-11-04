@@ -15,6 +15,7 @@ const modules = [
   { title: 'Tin tức & cảnh báo', href: '/bulletins', description: 'Đăng thông tin trong phạm vi tenant.' },
   { title: 'Khảo sát ý kiến', href: '/surveys', description: 'Tạo khảo sát và xem kết quả.' },
   { title: 'Đường dây nóng', href: '/hotlines', description: 'Cập nhật danh bạ liên hệ và giờ trực.' },
+  { title: 'Thông tin truyền thông', href: '/communications', description: 'Phát hành thông tin và chiến dịch truyền thông.' },
 ];
 
 const identity = new URL(authority);
@@ -49,7 +50,7 @@ export function AdminPage() {
     { label: 'Lịch tiếp công dân', value: overview.appointments.total, detail: `${overview.appointments.breakdown.pending || 0} chờ duyệt`, href: '/appointments' },
     { label: 'Phản ánh thủ tục', value: overview.administrative_feedback.total, detail: `${overview.administrative_feedback.breakdown.submitted || 0} mới gửi`, href: '/administrative-feedback' },
     { label: 'Kiến nghị doanh nghiệp', value: overview.business_feedback.total, detail: `${overview.business_feedback.breakdown.submitted || 0} mới gửi`, href: '/business-feedback' },
-    { label: 'Tin & cảnh báo', value: overview.bulletins.total, detail: 'Đã phát hành', href: '/bulletins' },
+    { label: 'Tin, cảnh báo & truyền thông', value: overview.bulletins.total, detail: 'Đã phát hành', href: '/bulletins' },
     { label: 'Khảo sát', value: overview.surveys.total, detail: `${overview.surveys.breakdown.open || 0} đang mở`, href: '/surveys' },
     { label: 'Đường dây nóng', value: overview.hotlines.total, detail: `${overview.hotlines.breakdown['1'] || 0} đang hiển thị`, href: '/hotlines' },
   ] : [];

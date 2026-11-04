@@ -92,6 +92,9 @@ export function Shell() {
             {canSee('hotlines') && <NavLink to="/hotlines" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
               <PhoneCall size={18} /><span>Đường dây nóng</span>
             </NavLink>}
+            {canSee('communications') && <NavLink to="/communications" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+              <Newspaper size={18} /><span>Truyền thông</span>
+            </NavLink>}
           </nav>
 
           {/* User Account / Login Area */}
@@ -176,6 +179,7 @@ export function Shell() {
                 {canSee('bulletins') && <li><Link to="/bulletins">Bản tin & Cảnh báo khu vực</Link></li>}
                 {canSee('appointments') && <li><Link to="/appointments">Đăng ký tiếp công dân</Link></li>}
                 {canSee('hotlines') && <li><Link to="/hotlines">Danh bạ đường dây nóng</Link></li>}
+                {canSee('communications') && <li><Link to="/communications">Thông tin truyền thông</Link></li>}
                 {!operator && <li><Link to="/#danh-muc">Danh mục dịch vụ số</Link></li>}
               </ul>
             </div>
