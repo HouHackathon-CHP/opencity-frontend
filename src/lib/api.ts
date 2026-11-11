@@ -150,9 +150,13 @@ export class ApiError extends Error {
 }
 
 export async function request<T>(path: string, token: string, init: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = { ...(init.headers as Record<string, string>) };
+  if (token && token.trim()) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
-    headers: { Authorization: `Bearer ${token}`, ...init.headers },
+    headers,
   });
   if (!response.ok) {
     let detail = `Yêu cầu thất bại (${response.status})`;
@@ -160,6 +164,11 @@ export async function request<T>(path: string, token: string, init: RequestInit 
       const body = await response.json();
       detail = typeof body.detail === 'string' ? body.detail : detail;
     } catch { /* Server may return an empty response. */ }
+    if (response.status === 401 || detail === 'Bearer token required') {
+      detail = 'Vui lòng đăng nhập tài khoản cán bộ để thực hiện thao tác này.';
+    } else if (response.status === 403) {
+      detail = 'Tài khoản của bạn không có quyền thực hiện thao tác này.';
+    }
     throw new ApiError(response.status, detail);
   }
   return response.json() as Promise<T>;
@@ -175,4 +184,94 @@ export async function downloadAttachment(reportId: string, objectId: string, tok
 
 export const reportStates: Record<string, string> = {
   submitted: 'Mới gửi', triaged: 'Đã tiếp nhận', assigned: 'Đang xử lý', resolved: 'Đã hoàn tất',
+};
+
+export type AQIClassification = {
+  level: 'good' | 'moderate' | 'unhealthy_sensitive' | 'unhealthy' | 'very_unhealthy' | 'hazardous';
+  label: string;
+  color: string;
+  bg_color: string;
+  health_effect: string;
+  advice_general: string;
+  advice_sensitive: string;
+  recommendations: { icon: string; text: string }[];
+};
+
+export type AirStation = {
+  code: string;
+  name: string;
+  address: string;
+  area_type: string;
+  latitude: number;
+  longitude: number;
+  created_at: string;
+};
+
+export type AirReading = {
+  id: string;
+  tenant: string;
+  station_code: string;
+  aqi: number;
+  pm25: number;
+  pm10: number;
+  temperature: number;
+  humidity: number;
+  co: number | null;
+  no2: number | null;
+  o3: number | null;
+  so2: number | null;
+  note: string | null;
+  recorded_at: string;
+};
+
+export type StationItem = {
+  code: string;
+  name: string;
+  address: string;
+  area_type: string;
+  latitude: number;
+  longitude: number;
+  status: 'active' | 'maintenance' | 'hidden';
+  created_at: string;
+  latest_reading: AirReading | null;
+  classification: AQIClassification;
+};
+
+export type StationInput = {
+  code: string;
+  name: string;
+  address: string;
+  area_type: string;
+  latitude: number;
+  longitude: number;
+};
+
+export type BroadcastAlertInput = {
+  station_code: string;
+  title: string;
+  summary: string;
+};
+
+export type StationDetail = StationItem & {
+  history: (AirReading & { classification: AQIClassification })[];
+};
+
+export type AirQualitySummary = {
+  tenant: string;
+  total_stations: number;
+  average_aqi: number;
+  classification: AQIClassification;
+  updated_at: string;
+  best_station: StationItem | null;
+  worst_station: StationItem | null;
+  distribution: Record<string, number>;
+};
+
+export type WaqiStatus = {
+  has_token: boolean;
+  token_preview: string;
+  source: string;
+  api_endpoint: string;
+  configured_via: string;
+  message: string;
 };

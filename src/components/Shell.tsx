@@ -1,10 +1,28 @@
 // SPDX-License-Identifier: Apache-2.0
-import { useEffect, useState } from 'react';
-import { ArrowRight, Bell, CalendarDays, ClipboardList, ExternalLink, Globe, LayoutGrid, LogIn, LogOut, MapPin, Newspaper, PhoneCall, Shield, ShieldCheck, UserCheck } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ArrowRight,
+  Bell,
+  CalendarDays,
+  ChevronDown,
+  ClipboardList,
+  ExternalLink,
+  Globe,
+  Layers,
+  LayoutGrid,
+  LogIn,
+  LogOut,
+  MapPin,
+  Newspaper,
+  PhoneCall,
+  Shield,
+  ShieldCheck,
+  UserCheck,
+  Wind,
+} from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
-import { displayName } from '../lib/auth';
-import { rolesOf } from '../lib/auth';
+import { displayName, rolesOf } from '../lib/auth';
 import { canOpenFeature, managementOf, type Feature } from '../lib/permissions';
 import { Logo } from './Logo';
 import { request, type Notification } from '../lib/api';
@@ -16,6 +34,45 @@ export function Shell() {
   const canSee = (feature: Feature) => !loading && canOpenFeature(user, feature);
   const location = useLocation();
   const [unread, setUnread] = useState(0);
+
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setMoreMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    setMoreMenuOpen(false);
+  }, [location.pathname]);
+
+  const moreRoutes = [
+    '/air-quality',
+    '/hotlines',
+    '/surveys',
+    '/appointments',
+    '/communications',
+    '/community/groups',
+    '/social-feedback',
+    '/digital-wards',
+  ];
+  const isMoreActive = moreRoutes.some((path) => location.pathname.startsWith(path));
+
+  const hasMoreItems =
+    canSee('air_quality') ||
+    canSee('hotlines') ||
+    canSee('surveys') ||
+    canSee('appointments') ||
+    canSee('communications') ||
+    canSee('community_groups') ||
+    canSee('social_feedback') ||
+    canSee('digital_ward');
 
   useEffect(() => {
     if (!user?.access_token) { setUnread(0); return; }
@@ -58,7 +115,7 @@ export function Shell() {
 
       {/* Main Top Navigation */}
       <header className="topbar">
-        <div className="topbar-inner page-width">
+        <div className="topbar-inner">
           {/* Unified Brand Logo */}
           <Link className="brand" to="/" aria-label="OpenCity — Trang chủ">
             <Logo size={38} />
@@ -67,77 +124,163 @@ export function Shell() {
           {/* Desktop Navigation Links */}
           <nav className="desktop-nav" aria-label="Điều hướng chính">
             <NavLink to="/" end className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <LayoutGrid size={18} />
+              <LayoutGrid size={17} />
               <span>{admin ? 'Quản trị' : operator ? 'Vận hành' : 'Dịch vụ'}</span>
             </NavLink>
-            {admin && <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <Shield size={18} /><span>Hệ thống</span>
-            </NavLink>}
-            {canSee('reports') && <NavLink to="/reports" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <MapPin size={18} />
-              <span>Phản ánh hiện trường</span>
-            </NavLink>}
-            {canSee('surveys') && <NavLink to="/surveys" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <ClipboardList size={18} />
-              <span>Khảo sát ý kiến</span>
-            </NavLink>}
-            {canSee('bulletins') && <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <Newspaper size={18} />
-              <span>Tin & Cảnh báo</span>
-            </NavLink>}
-            {canSee('appointments') && <NavLink to="/appointments" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <CalendarDays size={18} />
-              <span>Tiếp công dân</span>
-            </NavLink>}
-            {canSee('hotlines') && <NavLink to="/hotlines" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <PhoneCall size={18} /><span>Đường dây nóng</span>
-            </NavLink>}
-            {canSee('communications') && <NavLink to="/communications" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <Newspaper size={18} /><span>Truyền thông</span>
-            </NavLink>}
-            {canSee('community_groups') && <NavLink to="/community/groups" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <Globe size={18} /><span>Cộng đồng</span>
-            </NavLink>}
-            {canSee('social_feedback') && <NavLink to="/social-feedback" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <Globe size={18} /><span>Góp ý xã hội</span>
-            </NavLink>}
-            {canSee('digital_ward') && <NavLink to="/digital-wards" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
-              <MapPin size={18} /><span>Xã/phường số</span>
-            </NavLink>}
+            {admin && (
+              <NavLink to="/admin" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+                <Shield size={17} />
+                <span>Hệ thống</span>
+              </NavLink>
+            )}
+            {canSee('reports') && (
+              <NavLink to="/reports" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+                <MapPin size={17} />
+                <span>Phản ánh hiện trường</span>
+              </NavLink>
+            )}
+            {canSee('bulletins') && (
+              <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}>
+                <Newspaper size={17} />
+                <span>Tin & Cảnh báo</span>
+              </NavLink>
+            )}
+
+            {/* Dropdown for Secondary Civic Services */}
+            {hasMoreItems && (
+              <div className="nav-dropdown-wrapper" ref={moreMenuRef}>
+                <button
+                  type="button"
+                  className={`nav-link nav-dropdown-btn ${isMoreActive ? 'active' : ''}`}
+                  onClick={() => setMoreMenuOpen((prev) => !prev)}
+                  aria-expanded={moreMenuOpen}
+                >
+                  <Layers size={17} />
+                  <span>Dịch vụ khác</span>
+                  <ChevronDown
+                    size={14}
+                    style={{
+                      transition: 'transform 0.2s ease',
+                      transform: moreMenuOpen ? 'rotate(180deg)' : 'none',
+                    }}
+                  />
+                </button>
+                {moreMenuOpen && (
+                  <div className="nav-dropdown-menu">
+                    {canSee('air_quality') && (
+                      <NavLink
+                        to="/air-quality"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <Wind size={16} />
+                        <span>Không khí & AQI</span>
+                      </NavLink>
+                    )}
+                    {canSee('hotlines') && (
+                      <NavLink
+                        to="/hotlines"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <PhoneCall size={16} />
+                        <span>Đường dây nóng 24/7</span>
+                      </NavLink>
+                    )}
+                    {canSee('surveys') && (
+                      <NavLink
+                        to="/surveys"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <ClipboardList size={16} />
+                        <span>Khảo sát ý kiến</span>
+                      </NavLink>
+                    )}
+                    {canSee('appointments') && (
+                      <NavLink
+                        to="/appointments"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <CalendarDays size={16} />
+                        <span>Tiếp công dân</span>
+                      </NavLink>
+                    )}
+                    {canSee('communications') && (
+                      <NavLink
+                        to="/communications"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <Newspaper size={16} />
+                        <span>Thông tin truyền thông</span>
+                      </NavLink>
+                    )}
+                    {canSee('community_groups') && (
+                      <NavLink
+                        to="/community/groups"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <Globe size={16} />
+                        <span>Nhóm cộng đồng</span>
+                      </NavLink>
+                    )}
+                    {canSee('social_feedback') && (
+                      <NavLink
+                        to="/social-feedback"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <Globe size={16} />
+                        <span>Góp ý, phản biện xã hội</span>
+                      </NavLink>
+                    )}
+                    {canSee('digital_ward') && (
+                      <NavLink
+                        to="/digital-wards"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <MapPin size={16} />
+                        <span>Xã/phường số</span>
+                      </NavLink>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </nav>
 
           {/* User Account / Login Area */}
           <div className="account-area">
             {user ? (
               <>
-              <NavLink to="/notifications" className="notification-nav-link" aria-label={`Thông báo${unread ? `, ${unread} chưa đọc` : ''}`}>
-                <Bell size={20} />
-                {unread > 0 && <span className="notification-count">{unread > 99 ? '99+' : unread}</span>}
-              </NavLink>
-              <div className="user-profile-widget">
-                <div className={`user-role-pill ${operator ? 'role-officer' : 'role-citizen'}`}>
-                  {operator ? <Shield size={13} /> : <UserCheck size={13} />}
-                  <span>{operator ? 'Cán bộ xử lý' : 'Công dân'}</span>
-                </div>
-                <div className="user-chip">
-                  <div className="user-avatar" title={displayName(user)}>
-                    {displayName(user).slice(0, 1).toUpperCase()}
-                  </div>
-                  <div className="user-meta">
-                    <strong className="user-name">{displayName(user)}</strong>
-                    <span className="user-subtext">{operator ? 'Nghiệp vụ được cấp quyền' : 'Tài khoản DX-OS'}</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="icon-button logout-button"
-                  title="Đăng xuất khỏi hệ thống"
-                  aria-label="Đăng xuất"
-                  onClick={() => void logout()}
+                <NavLink
+                  to="/notifications"
+                  className="notification-nav-link"
+                  aria-label={`Thông báo${unread ? `, ${unread} chưa đọc` : ''}`}
                 >
-                  <LogOut size={16} />
-                </button>
-              </div>
+                  <Bell size={20} />
+                  {unread > 0 && <span className="notification-count">{unread > 99 ? '99+' : unread}</span>}
+                </NavLink>
+                <div className="user-profile-widget">
+                  <div className={`user-role-pill ${operator ? 'role-officer' : 'role-citizen'}`}>
+                    {operator ? <Shield size={13} /> : <UserCheck size={13} />}
+                    <span>{operator ? 'Cán bộ xử lý' : 'Công dân'}</span>
+                  </div>
+                  <div className="user-chip">
+                    <div className="user-avatar" title={displayName(user)}>
+                      {displayName(user).slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="user-meta">
+                      <strong className="user-name">{displayName(user)}</strong>
+                      <span className="user-subtext">{operator ? 'Nghiệp vụ được cấp quyền' : 'Tài khoản DX-OS'}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="icon-button logout-button"
+                    title="Đăng xuất khỏi hệ thống"
+                    aria-label="Đăng xuất"
+                    onClick={() => void logout()}
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
               </>
             ) : (
               <button

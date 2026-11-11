@@ -80,7 +80,7 @@
     { "id": "fire-safety", "category": "utilities", "name": "Tư vấn an toàn PCCC", "description": "Thông tin và hướng dẫn an toàn.", "icon": "Flame", "kind": "link", "status": "needs-integration" },
     { "id": "investment-map", "category": "utilities", "name": "Bản đồ đầu tư", "description": "Tra cứu các điểm và dự án đầu tư.", "icon": "MapPinned", "kind": "connector", "status": "needs-integration" },
     { "id": "loyalty", "category": "utilities", "name": "Điểm thưởng", "description": "Điểm kết nối chương trình ưu đãi.", "icon": "Gift", "kind": "connector", "status": "needs-integration" },
-    { "id": "air-quality", "category": "utilities", "name": "Chất lượng không khí", "description": "Dữ liệu môi trường theo khu vực.", "icon": "Wind", "kind": "connector", "status": "needs-integration" },
+    { "id": "air-quality", "category": "utilities", "name": "Chất lượng không khí", "description": "Theo dõi chỉ số ô nhiễm không khí VN-AQI, nồng độ bụi mịn PM2.5, PM10 theo trạm quan trắc đô thị.", "icon": "Wind", "kind": "native", "status": "available", "route": "/air-quality" },
     { "id": "hotlines", "category": "utilities", "name": "Danh bạ đường dây nóng", "description": "Tra cứu kênh hỗ trợ và giờ trực do đơn vị vận hành cập nhật.", "icon": "PhoneCall", "kind": "native", "status": "available", "route": "/hotlines" },
     { "id": "payments", "category": "utilities", "name": "Tiện ích thanh toán", "description": "Kết nối các nhà cung cấp thanh toán.", "icon": "Wallet", "kind": "connector", "status": "needs-integration" },
     { "id": "media", "category": "utilities", "name": "Truyền hình", "description": "Điểm truy cập kênh nội dung số.", "icon": "Tv", "kind": "link", "status": "needs-integration" },
