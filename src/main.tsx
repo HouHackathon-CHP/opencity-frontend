@@ -5,6 +5,7 @@ import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import {
   Activity,
   ArrowRight,
+  BusFront,
   CalendarDays,
   CheckCircle2,
   ClipboardList,
@@ -43,6 +44,7 @@ const CommunicationsPage = React.lazy(() => import('./pages/CommunicationsPage')
 const CommunityGroupsPage = React.lazy(() => import('./pages/CommunityGroupsPage').then((module) => ({ default: module.CommunityGroupsPage })));
 const SocialFeedbackPage = React.lazy(() => import('./pages/SocialFeedbackPage').then((module) => ({ default: module.SocialFeedbackPage })));
 const DigitalWardPage = React.lazy(() => import('./pages/DigitalWardPage').then((module) => ({ default: module.DigitalWardPage })));
+const BusSearchPage = React.lazy(() => import('./pages/BusSearchPage').then((module) => ({ default: module.BusSearchPage })));
 
 type FeatureCardMeta = {
   label: string;
@@ -175,6 +177,16 @@ const FEATURE_CARDS: Record<Feature, FeatureCardMeta> = {
     accentColor: '#8b5cf6',
     accentBg: '#f5f3ff',
     href: '/digital-wards',
+  },
+  bus_search: {
+    label: 'Điều hành Vận tải & Mạng lưới Xe buýt',
+    tag: 'Giao thông thông minh',
+    desc: 'Bản đồ số hóa lộ trình xe buýt, trạm dừng OpenStreetMap, thuật toán tìm đường thông minh và kiểm toán dữ liệu.',
+    statusBadge: 'Vận hành số',
+    icon: BusFront,
+    accentColor: '#0284c7',
+    accentBg: '#f0f9ff',
+    href: '/bus-search',
   },
 };
 
@@ -360,6 +372,8 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/business-feedback" element={<FeatureRoute feature="business_feedback"><BusinessFeedbackPage /></FeatureRoute>} />
                 <Route path="/bulletins" element={<FeatureRoute feature="bulletins"><BulletinsPage /></FeatureRoute>} />
                 <Route path="/air-quality" element={<FeatureRoute feature="air_quality"><AirQualityPage /></FeatureRoute>} />
+                <Route path="/bus-search" element={<BusSearchPage />} />
+                <Route path="/bus" element={<Navigate to="/bus-search" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   Bell,
+  BusFront,
   CalendarDays,
   ChevronDown,
   ClipboardList,
@@ -54,6 +55,7 @@ export function Shell() {
 
   const moreRoutes = [
     '/air-quality',
+    '/bus-search',
     '/hotlines',
     '/surveys',
     '/appointments',
@@ -66,6 +68,7 @@ export function Shell() {
 
   const hasMoreItems =
     canSee('air_quality') ||
+    canSee('bus_search') ||
     canSee('hotlines') ||
     canSee('surveys') ||
     canSee('appointments') ||
@@ -174,6 +177,15 @@ export function Shell() {
                       >
                         <Wind size={16} />
                         <span>Không khí & AQI</span>
+                      </NavLink>
+                    )}
+                    {canSee('bus_search') && (
+                      <NavLink
+                        to="/bus-search"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <BusFront size={16} />
+                        <span>Tra cứu xe buýt</span>
                       </NavLink>
                     )}
                     {canSee('hotlines') && (

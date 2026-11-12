@@ -43,9 +43,9 @@
     { "id": "traffic-cameras", "category": "transport", "name": "Camera giao thông", "description": "Nguồn camera được cấp quyền chia sẻ.", "icon": "Camera", "kind": "connector", "status": "needs-integration" },
     { "id": "traffic-violations", "category": "transport", "name": "Thông báo vi phạm giao thông", "description": "Tra cứu từ hệ thống có thẩm quyền.", "icon": "FileWarning", "kind": "connector", "status": "needs-integration" },
     { "id": "bus-pass", "category": "transport", "name": "Đăng ký vé tháng xe buýt", "description": "Điểm kết nối dịch vụ vé tháng.", "icon": "Ticket", "kind": "connector", "status": "needs-integration" },
-    { "id": "find-bus", "category": "transport", "name": "Tìm buýt", "description": "Tra cứu tuyến và trạm xe buýt.", "icon": "BusFront", "kind": "connector", "status": "needs-integration" },
+    { "id": "find-bus", "category": "transport", "name": "Tìm buýt", "description": "Tìm kiếm tuyến buýt, điểm đón trả và tìm đường đi thông minh.", "icon": "BusFront", "kind": "native", "status": "available", "route": "/bus-search" },
     { "id": "airport-bus", "category": "transport", "name": "Vé xe buýt sân bay", "description": "Điểm kết nối đặt vé chuyên tuyến.", "icon": "Plane", "kind": "connector", "status": "needs-integration" },
-    { "id": "bus-routes", "category": "transport", "name": "Tra cứu tuyến xe", "description": "Tìm kiếm lộ trình giao thông công cộng.", "icon": "Route", "kind": "connector", "status": "needs-integration" },
+    { "id": "bus-routes", "category": "transport", "name": "Tra cứu tuyến xe", "description": "Tra cứu lộ trình, trạm dừng và bản đồ giao thông công cộng OpenStreetMap.", "icon": "Route", "kind": "native", "status": "available", "route": "/bus-search?tab=routes" },
     { "id": "parking", "category": "transport", "name": "Tra cứu điểm đỗ", "description": "Tìm bãi và điểm đỗ xe.", "icon": "ParkingCircle", "kind": "connector", "status": "needs-integration" },
     { "id": "traffic-info", "category": "transport", "name": "Thông tin giao thông", "description": "Tin tức và tình trạng giao thông.", "icon": "TrafficCone", "kind": "connector", "status": "needs-integration" },
 
