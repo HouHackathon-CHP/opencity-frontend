@@ -769,6 +769,8 @@ export function BusSearchPage() {
     });
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
 
     map.on('load', () => {
       map.addSource('route-path-source', {
@@ -2788,6 +2790,39 @@ export function BusSearchPage() {
                               </div>
                             )}
 
+                            {(() => {
+                              const transitDistKm = calcDistKm(
+                                rec.board_stop.latitude,
+                                rec.board_stop.longitude,
+                                rec.alight_stop.latitude,
+                                rec.alight_stop.longitude
+                              );
+                              const co2SavedGrams = Math.max(80, Math.round(transitDistKm * 115));
+                              const isElectric = rec.route_number.toUpperCase().startsWith('E');
+                              return (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                                  <div className="eco-saving-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 6, background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#166534', fontSize: '11.5px', fontWeight: 600 }}>
+                                    <span>🌱 Tiết kiệm ~{co2SavedGrams}g CO₂ so với xe máy</span>
+                                    {isElectric && (
+                                      <span style={{ background: '#22c55e', color: '#fff', padding: '1px 6px', borderRadius: 4, fontSize: '10px', fontWeight: 800 }}>⚡ Buýt điện Net Zero</span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    style={{ background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 6, padding: '3px 8px', fontSize: '11px', fontWeight: 600, color: '#334155', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const text = `🚌 Lộ trình xe buýt Hà Nội: Đi từ "${rec.board_stop.name}" đến "${rec.alight_stop.name}" bằng Tuyến ${rec.route_number}. Ước tính ${rec.estimated_minutes} phút (${rec.stops_count} trạm). Xuống tại ${rec.alight_stop.name}.`;
+                                      navigator.clipboard?.writeText(text);
+                                      alert('Đã sao chép hướng dẫn lộ trình vào bộ nhớ tạm!');
+                                    }}
+                                  >
+                                    📋 Sao chép hành trình
+                                  </button>
+                                </div>
+                              );
+                            })()}
+
                             <div className="rec-steps" style={{ marginTop: 10 }}>
                               <div className="step-point board-point">
                                 <div className="bullet-point" />
@@ -3239,6 +3274,23 @@ export function BusSearchPage() {
                           style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                         >
                           <Upload size={15} /> Nạp GeoJSON
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline"
+                          onClick={() => {
+                            if (!audit) return;
+                            const blob = new Blob([JSON.stringify(audit, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `opencity-bus-audit-${new Date().toISOString().slice(0, 10)}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                        >
+                          <Database size={15} /> Xuất báo cáo (JSON)
                         </button>
                       </div>
                     </div>
