@@ -890,13 +890,25 @@ export function ReportsPage() {
                     <div className="officer-action-panel triage-officer-panel">
                       <section className="triage-panel" aria-label="Gợi ý phân luồng">
                         <div className="triage-panel-heading">
-                          <div><Sparkles size={18} /><strong>Gợi ý phân luồng</strong></div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <Sparkles size={18} />
+                            <strong>Gợi ý phân luồng AI</strong>
+                            {activeTriage?.model_version && (
+                              <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', background: activeTriage.model_version.includes('phobert') ? '#e0f2fe' : '#f3f4f6', color: activeTriage.model_version.includes('phobert') ? '#0369a1' : '#4b5563', fontWeight: 600 }}>
+                                {activeTriage.model_version.includes('phobert') ? '⚡ PhoBERT Multi-Task' : activeTriage.model_version}
+                              </span>
+                            )}
+                          </div>
                           <button type="button" className="btn-outline" onClick={() => void generateTriage()}
                             disabled={triageBusy || busy}>
                             {triageBusy ? 'Đang phân tích…' : activeTriage ? 'Phân tích lại' : 'Phân tích phản ánh'}
                           </button>
                         </div>
-                        <p>Mô hình Naive Bayes nội bộ phân tích văn bản; cán bộ xác nhận hoặc sửa đơn vị và tự đặt hạn xử lý. Ảnh chưa được phân tích.</p>
+                        <p>
+                          {activeTriage?.model_version?.includes('phobert')
+                            ? 'Mô hình AI PhoBERT Multi-Task (Backbone tiếng Việt 12 nhãn + 3 mức khẩn cấp + Vector ngữ nghĩa L2) tự động phân luồng và phát hiện trùng lặp.'
+                            : 'Mô hình AI nội bộ phân tích văn bản; cán bộ xác nhận hoặc sửa đơn vị và tự đặt hạn xử lý.'}
+                        </p>
                         {activeTriage && <>
                           {activeTriage.stale && <p className="triage-warning">Nội dung phản ánh đã thay đổi. Hãy phân tích lại để dùng gợi ý.</p>}
                           {activeTriage.reviewed_unit && <p className="triage-review">Đã phân công cho {unitNames[activeTriage.reviewed_unit] || activeTriage.reviewed_unit} · {activeTriage.matched ? 'theo gợi ý' : 'cán bộ đã điều chỉnh gợi ý'}</p>}
