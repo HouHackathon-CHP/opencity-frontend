@@ -24,6 +24,22 @@ export type Report = {
   history: { action: string; from_state: string | null; to_state: string | null;
     actor: string; created_at: string; from_unit?: string | null; to_unit?: string | null; note?: string | null }[];
   warnings?: string[];
+  urgency?: 'high' | 'normal' | 'low' | null;
+  suggested_unit?: string | null;
+  has_duplicate?: boolean;
+  top_similarity?: number;
+  similar_count?: number;
+  duplicate_confirmed?: boolean;
+  duplicate_reviews?: Record<string, boolean>;
+};
+
+export type DuplicateReview = {
+  id: string;
+  report_id: string;
+  similar_report_id: string;
+  is_duplicate: boolean;
+  reviewed_by: string;
+  reviewed_at: string;
 };
 
 export type ReportsDashboard = {

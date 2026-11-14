@@ -30,7 +30,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { rolesOf, unitOf } from '../lib/auth';
 import { canDispatch, canManage } from '../lib/permissions';
-import { ApiError, downloadAttachment, reportStates, request, type Report, type TriageSuggestion } from '../lib/api';
+import { ApiError, downloadAttachment, reportStates, request, type Report, type TriageSuggestion, type DuplicateReview } from '../lib/api';
 
 const types = ['Hạ tầng', 'Môi trường', 'Giao thông', 'Chiếu sáng', 'Cây xanh', 'Khác'];
 const unitNames: Record<string, string> = {
@@ -210,6 +210,24 @@ export function ReportsPage() {
   // Search & filter
   const [searchQuery, setSearchQuery] = useState('');
   const [stateFilter, setStateFilter] = useState<'all' | 'submitted' | 'triaged' | 'assigned' | 'resolved' | 'overdue'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'high' | 'normal' | 'low' | 'duplicate'>('all');
+  const [duplicateReviews, setDuplicateReviews] = useState<Record<string, Record<string, boolean>>>({});
+  const [dupSaving, setDupSaving] = useState(false);
+
+  // Sync initial duplicate reviews from loaded reports
+  useEffect(() => {
+    if (reports.length > 0) {
+      setDuplicateReviews((prev) => {
+        const next = { ...prev };
+        for (const r of reports) {
+          if (r.duplicate_reviews && Object.keys(r.duplicate_reviews).length > 0) {
+            next[r.id] = { ...(next[r.id] || {}), ...r.duplicate_reviews };
+          }
+        }
+        return next;
+      });
+    }
+  }, [reports]);
 
   // Form states
   const [title, setTitle] = useState('');
@@ -276,6 +294,59 @@ export function ReportsPage() {
     }
   }, [token, isDispatcher]);
 
+  const loadDuplicateReviews = useCallback(async (id: string) => {
+    if (!token || !isDispatcher) return;
+    try {
+      const items = await request<DuplicateReview[]>(
+        `/api/opencity/reports/${encodeURIComponent(id)}/duplicate-reviews`, token);
+      const revMap: Record<string, boolean> = {};
+      for (const item of items) {
+        revMap[item.similar_report_id] = item.is_duplicate;
+      }
+      setDuplicateReviews((prev) => ({ ...prev, [id]: revMap }));
+    } catch {
+      // ignore
+    }
+  }, [token, isDispatcher]);
+
+  async function toggleDuplicateReview(reportId: string, similarId: string, isDup: boolean) {
+    if (!token || !isDispatcher || dupSaving) return;
+    setDupSaving(true);
+    setDuplicateReviews((prev) => ({
+      ...prev,
+      [reportId]: { ...(prev[reportId] || {}), [similarId]: isDup },
+    }));
+    try {
+      await request<DuplicateReview>(
+        `/api/opencity/reports/${encodeURIComponent(reportId)}/duplicate-reviews`,
+        token,
+        {
+          method: 'POST',
+          body: JSON.stringify({ similar_report_id: similarId, is_duplicate: isDup }),
+        }
+      );
+      if (isDup) {
+        const matched = reports.find((r) => r.id === similarId);
+        if (matched?.assigned_unit) {
+          setDispatchUnit(matched.assigned_unit);
+        }
+        setDispatchNote((prev) => prev ? prev : `Đã xác nhận trùng lặp với hồ sơ #${similarId.slice(0, 8).toUpperCase()}. Điều phối cùng đơn vị để gộp xử lý.`);
+      }
+      setReports((prev) => prev.map((r) => {
+        if (r.id === reportId) {
+          const currentReviews = { ...(duplicateReviews[reportId] || {}), [similarId]: isDup };
+          const hasConfirmed = Object.values(currentReviews).some(Boolean);
+          return { ...r, duplicate_confirmed: hasConfirmed, duplicate_reviews: currentReviews };
+        }
+        return r;
+      }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không lưu được xác nhận trùng lặp.');
+    } finally {
+      setDupSaving(false);
+    }
+  }
+
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -284,12 +355,15 @@ export function ReportsPage() {
     if (selectedId) {
       void loadDetail(selectedId);
       setTriage(null);
-      if (isDispatcher) void loadTriage(selectedId);
+      if (isDispatcher) {
+        void loadTriage(selectedId);
+        void loadDuplicateReviews(selectedId);
+      }
     } else {
       setDetail(null);
       setTriage(null);
     }
-  }, [selectedId, loadDetail, loadTriage, isDispatcher]);
+  }, [selectedId, loadDetail, loadTriage, loadDuplicateReviews, isDispatcher]);
 
   async function generateTriage() {
     if (!detail || !token || !isDispatcher || triageBusy) return;
@@ -444,11 +518,34 @@ export function ReportsPage() {
     );
   }
 
+  // Priority & Duplicate counts
+  const priorityCounts = useMemo(() => {
+    const baseReports = reports.filter((item) => {
+      if (stateFilter === 'overdue') return isOverdue(item);
+      if (stateFilter !== 'all') return item.state === stateFilter;
+      return true;
+    });
+    return {
+      all: baseReports.length,
+      high: baseReports.filter((r) => r.urgency === 'high').length,
+      normal: baseReports.filter((r) => r.urgency === 'normal').length,
+      low: baseReports.filter((r) => r.urgency === 'low').length,
+      duplicate: baseReports.filter((r) => r.has_duplicate || (r.top_similarity && r.top_similarity >= 0.50)).length,
+    };
+  }, [reports, stateFilter]);
+
   // Filtered reports
   const filteredReports = useMemo(() => {
     return reports.filter((item) => {
       if (stateFilter === 'overdue' && !isOverdue(item)) return false;
       if (stateFilter !== 'all' && stateFilter !== 'overdue' && item.state !== stateFilter) return false;
+
+      // Priority & Duplicate sub-filter
+      if (priorityFilter === 'high' && item.urgency !== 'high') return false;
+      if (priorityFilter === 'normal' && item.urgency !== 'normal') return false;
+      if (priorityFilter === 'low' && item.urgency !== 'low') return false;
+      if (priorityFilter === 'duplicate' && !item.has_duplicate && (!item.top_similarity || item.top_similarity < 0.50)) return false;
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         return (
@@ -460,7 +557,7 @@ export function ReportsPage() {
       }
       return true;
     });
-  }, [reports, stateFilter, searchQuery]);
+  }, [reports, stateFilter, priorityFilter, searchQuery]);
   const isHandler = Boolean(detail?.assigned_unit && (
     roles.includes('admin') ||
     (roles.includes('reports_operator') && unitOf(user) === detail.assigned_unit)
@@ -813,6 +910,62 @@ export function ReportsPage() {
                 </button>}
               </div>
 
+              {/* Secondary AI Triage & Duplicate sub-filter tabs for dispatchers */}
+              {isDispatcher && (
+                <div className="list-ai-filter-bar">
+                  <div className="ai-filter-header">
+                    <span className="ai-filter-title">
+                      <Sparkles size={13} /> Phân loại & Cảnh báo AI:
+                    </span>
+                  </div>
+                  <div className="ai-filter-chips" role="tablist" aria-label="Lọc theo mức ưu tiên và trùng lặp">
+                    <button
+                      type="button"
+                      className={`ai-chip ${priorityFilter === 'all' ? 'active' : ''}`}
+                      onClick={() => setPriorityFilter('all')}
+                    >
+                      Tất cả ({priorityCounts.all})
+                    </button>
+                    <button
+                      type="button"
+                      className={`ai-chip chip-high ${priorityFilter === 'high' ? 'active' : ''}`}
+                      onClick={() => setPriorityFilter('high')}
+                      title="Mức ưu tiên Cao từ PhoBERT"
+                    >
+                      <span className="chip-dot dot-high" />
+                      Cao ({priorityCounts.high})
+                    </button>
+                    <button
+                      type="button"
+                      className={`ai-chip chip-normal ${priorityFilter === 'normal' ? 'active' : ''}`}
+                      onClick={() => setPriorityFilter('normal')}
+                      title="Mức ưu tiên Trung bình"
+                    >
+                      <span className="chip-dot dot-normal" />
+                      Trung bình ({priorityCounts.normal})
+                    </button>
+                    <button
+                      type="button"
+                      className={`ai-chip chip-low ${priorityFilter === 'low' ? 'active' : ''}`}
+                      onClick={() => setPriorityFilter('low')}
+                      title="Mức ưu tiên Thấp"
+                    >
+                      <span className="chip-dot dot-low" />
+                      Thấp ({priorityCounts.low})
+                    </button>
+                    <button
+                      type="button"
+                      className={`ai-chip chip-dup ${priorityFilter === 'duplicate' ? 'active' : ''}`}
+                      onClick={() => setPriorityFilter('duplicate')}
+                      title="Phản ánh có cảnh báo trùng lặp từ AI"
+                    >
+                      <TriangleAlert size={12} />
+                      Trùng lặp ({priorityCounts.duplicate})
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Items Feed */}
               <div className="report-items-container">
                 {loading && !reports.length ? (
@@ -840,6 +993,27 @@ export function ReportsPage() {
                         <MapPin size={13} />
                         <span>{report.address}</span>
                       </div>
+
+                      {/* AI Priority & Duplicate Badges */}
+                      {(report.urgency || report.has_duplicate || (report.top_similarity && report.top_similarity >= 0.50)) && (
+                        <div className="item-card-ai-badges">
+                          {report.urgency === 'high' && (
+                            <span className="ai-badge badge-high">🔴 Cao</span>
+                          )}
+                          {report.urgency === 'normal' && (
+                            <span className="ai-badge badge-normal">🟡 Trung bình</span>
+                          )}
+                          {report.urgency === 'low' && (
+                            <span className="ai-badge badge-low">🟢 Thấp</span>
+                          )}
+                          {(report.has_duplicate || (report.top_similarity && report.top_similarity >= 0.50)) && (
+                            <span className={`ai-badge ${report.duplicate_confirmed ? 'badge-dup-confirmed' : 'badge-dup-alert'}`}>
+                              {report.duplicate_confirmed ? '✓ Đã xác nhận trùng' : `⚠️ Trùng ${Math.round((report.top_similarity || 0) * 100)}%`}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
                       <div className="item-card-footer">
                         <span className="item-time">
                           <Clock3 size={12} />
@@ -924,12 +1098,112 @@ export function ReportsPage() {
                           <p>Mức cần chú ý chỉ là gợi ý từ văn bản; cán bộ kiểm tra thực tế và đặt hạn xử lý.</p>
                           {activeTriage.signals.length === 0 && <p className="triage-warning">Không đủ tín hiệu văn bản để chọn đơn vị; chuyển về tiếp nhận chung để cán bộ kiểm tra.</p>}
                           {activeTriage.signals.length > 0 && <p>Tín hiệu văn bản: {activeTriage.signals.join(', ')}</p>}
-                          {activeTriage.similar.length > 0 && <div className="triage-duplicates">
-                            <strong>Phản ánh có nội dung tương tự</strong>
-                            {activeTriage.similar.map((item) => <Link key={item.id} to={`/reports?report=${encodeURIComponent(item.id)}`}>
-                              #{item.id.slice(0, 8)} · mức tương đồng {Math.round(item.similarity * 100)}%
-                            </Link>)}
-                          </div>}
+                          {activeTriage.similar.length > 0 && (
+                            <div className="triage-duplicate-review-box">
+                              <div className="duplicate-review-box-header">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                                  <TriangleAlert size={16} color="#d97706" />
+                                  <strong>Kiểm tra & Xác nhận Trùng Lặp AI ({activeTriage.similar.length})</strong>
+                                </div>
+                                <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                  PhoBERT Multi-Task (L2 Cosine + GPS + Thời gian)
+                                </span>
+                              </div>
+                              <p style={{ margin: '2px 0 6px', fontSize: '12px', color: '#64748b' }}>
+                                AI phát hiện các phản ánh có khả năng cùng mô tả một sự cố hiện trường. Cán bộ điều phối đối chiếu và tích chọn xác nhận bên dưới:
+                              </p>
+
+                              <div className="duplicate-candidate-list">
+                                {activeTriage.similar.map((item) => {
+                                  const cand = reports.find((r) => r.id === item.id);
+                                  const isConfirmed = Boolean(duplicateReviews[detail.id]?.[item.id]);
+                                  const simPercent = Math.round(item.similarity * 100);
+
+                                  return (
+                                    <div key={item.id} className={`duplicate-candidate-card ${isConfirmed ? 'is-confirmed' : ''}`}>
+                                      <div className="candidate-header">
+                                        <div className="candidate-title-row">
+                                          <span className="candidate-id-tag">#{item.id.slice(0, 8).toUpperCase()}</span>
+                                          <strong className="candidate-title">{cand?.title || `Hồ sơ #${item.id.slice(0, 8)}`}</strong>
+                                        </div>
+                                        <div className="candidate-similarity-pill">
+                                          <span style={{ fontWeight: 700, color: simPercent >= 75 ? '#dc2626' : '#d97706' }}>
+                                            {simPercent}% trùng khớp
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      {cand && (
+                                        <div className="candidate-meta-row">
+                                          <span><MapPin size={11} /> {cand.address}</span>
+                                          <span><Clock3 size={11} /> {formatDate(cand.created_at)}</span>
+                                          <StatusPill state={cand.state} />
+                                        </div>
+                                      )}
+
+                                      {cand?.description && (
+                                        <div className="candidate-desc-preview">
+                                          <small>Nội dung hiện trạng hồ sơ đối chiếu:</small>
+                                          <p>"{cand.description}"</p>
+                                        </div>
+                                      )}
+
+                                      {/* Tích chọn xem có đúng trùng lặp hay không */}
+                                      <div className="candidate-review-controls">
+                                        <label className="candidate-checkbox-label">
+                                          <input
+                                            type="checkbox"
+                                            checked={isConfirmed}
+                                            disabled={dupSaving}
+                                            onChange={(e) => void toggleDuplicateReview(detail.id, item.id, e.target.checked)}
+                                          />
+                                          <span className="checkbox-custom-label">
+                                            {isConfirmed ? (
+                                              <strong style={{ color: '#059669' }}>
+                                                <CheckCircle2 size={15} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                                                ĐÃ XÁC NHẬN: Phản ánh này đúng là trùng lặp sự cố
+                                              </strong>
+                                            ) : (
+                                              <span>
+                                                Tích vào đây nếu <strong>ĐÚNG là phản ánh trùng lặp</strong>
+                                              </span>
+                                            )}
+                                          </span>
+                                        </label>
+
+                                        <div className="candidate-actions">
+                                          <Link
+                                            to={`/reports?report=${encodeURIComponent(item.id)}`}
+                                            className="btn-candidate-view"
+                                            title="Mở hồ sơ này để đối chiếu chi tiết"
+                                          >
+                                            <ExternalLink size={12} /> Xem hồ sơ gốc
+                                          </Link>
+
+                                          {isConfirmed && (
+                                            <button
+                                              type="button"
+                                              className="btn-candidate-merge"
+                                              onClick={() => {
+                                                if (cand?.assigned_unit) {
+                                                  setDispatchUnit(cand.assigned_unit);
+                                                }
+                                                setDispatchNote(
+                                                  `Đã xác nhận trùng lặp với hồ sơ #${item.id.slice(0, 8).toUpperCase()}. Điều phối cùng đơn vị để gộp xử lý.`
+                                                );
+                                              }}
+                                            >
+                                              🔗 Gộp điều phối cùng đơn vị {cand?.assigned_unit ? `(${unitNames[cand.assigned_unit] || cand.assigned_unit})` : ''}
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </>}
                       </section>
                       <form onSubmit={submitDispatch} className="report-create-form">
