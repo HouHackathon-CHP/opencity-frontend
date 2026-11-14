@@ -2,12 +2,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import {
   AlertTriangle,
-  ArrowRight,
   CheckCircle2,
   ChevronRight,
   Crosshair,
   ExternalLink,
-  LockKeyhole,
   MapPin,
   Newspaper,
   Plus,
@@ -33,7 +31,7 @@ const formatDate = (value: string) => {
 };
 
 export function BulletinsPage() {
-  const { user, loading: authLoading, login } = useAuth();
+  const { user } = useAuth();
   const token = user?.access_token || '';
   const operator = canManage(user, 'bulletins');
 
@@ -58,7 +56,6 @@ export function BulletinsPage() {
   const [notice, setNotice] = useState('');
 
   const refresh = useCallback(async () => {
-    if (!token) return;
     setLoading(true);
     setError('');
     try {
@@ -198,33 +195,7 @@ export function BulletinsPage() {
         </div>
       </div>
 
-      {/* Not Logged In Gate */}
-      {!user ? (
-        <section className="login-gate-card">
-          <div className="gate-icon-box">
-            <LockKeyhole size={36} />
-          </div>
-          <div className="gate-content">
-            <h2 className="gate-title">
-              {authLoading ? 'Đang kiểm tra phiên làm việc…' : 'Đăng nhập để xem tin tức đơn vị'}
-            </h2>
-            <p className="gate-desc">
-              Bản tin và thông báo được hiển thị theo địa bàn đơn vị hành chính mà tài khoản bạn trực
-              thuộc.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => void login()}
-            disabled={authLoading}
-          >
-            <span>Đăng nhập ngay</span>
-            <ArrowRight size={16} />
-          </button>
-        </section>
-      ) : (
-        <>
+      <>
           {/* Controls Bar */}
           <div className="reports-control-panel">
             <div className="control-panel-heading">
@@ -658,8 +629,7 @@ export function BulletinsPage() {
               )}
             </div>
           </div>
-        </>
-      )}
+      </>
     </div>
   );
 }

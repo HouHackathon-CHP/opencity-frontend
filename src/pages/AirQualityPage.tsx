@@ -14,7 +14,6 @@ import {
   Eye,
   EyeOff,
   HeartPulse,
-  LockKeyhole,
   MapPin,
   Megaphone,
   Plus,
@@ -188,7 +187,7 @@ function getVisualHealthGuidance(aqi: number) {
 }
 
 export function AirQualityPage() {
-  const { user, loading: authLoading, login } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const token = user?.access_token || '';
   const operator = canManage(user, 'air_quality');
 
@@ -229,7 +228,6 @@ export function AirQualityPage() {
   const markersRef = useRef<maplibregl.Marker[]>([]);
 
   const refresh = useCallback(async () => {
-    if (!token) return;
     setLoading(true);
     setError('');
     try {
@@ -256,7 +254,7 @@ export function AirQualityPage() {
 
   const loadDetail = useCallback(
     async (code: string) => {
-      if (!token || !code) return;
+      if (!code) return;
       setLoadingDetail(true);
       try {
         const detail = await request<StationDetail>(
@@ -761,40 +759,6 @@ export function AirQualityPage() {
       <div className="air-quality-page page-width text-center" style={{ padding: '60px 0', color: 'var(--color-text-muted)' }}>
         <RefreshCw className="spin" size={24} style={{ display: 'inline-block', marginRight: 8, verticalAlign: 'middle' }} />
         <span>Đang kiểm tra phiên làm việc…</span>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="air-quality-page page-width">
-        <div className="page-breadcrumb">
-          <Link to="/" className="breadcrumb-link">
-            Danh mục dịch vụ
-          </Link>
-          <ChevronRight size={14} />
-          <span className="breadcrumb-current">Chất lượng không khí</span>
-        </div>
-
-        <section className="login-gate-card">
-          <div className="gate-icon-box">
-            <LockKeyhole size={36} />
-          </div>
-          <div className="gate-content">
-            <h2 className="gate-title">Đăng nhập để theo dõi chất lượng không khí</h2>
-            <p className="gate-desc">
-              Dữ liệu quan trắc môi trường và khuyến cáo y tế kết nối trực tiếp với mạng lưới cảm biến đô thị số OpenCity.
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => void login()}
-          >
-            <span>Đăng nhập ngay</span>
-            <ArrowRight size={16} />
-          </button>
-        </section>
       </div>
     );
   }
