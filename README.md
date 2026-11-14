@@ -50,13 +50,22 @@ come from `dxos-core/.env`; do not copy them into frontend configuration.
 | Demo account | Password variable | Page to test |
 | --- | --- | --- |
 | `dxos-citizen` | `DEMO_CITIZEN_PASSWORD` | `/reports`, `/reports/map`, `/administrative-feedback`, `/business-feedback`, `/appointments` |
-| `dxos-dispatcher` | `DEMO_OPERATOR_PASSWORD` | Dispatch and SLA dashboard at `/reports` |
-| `dxos-reports`, `dxos-reports-environment` | `DEMO_OPERATOR_PASSWORD` | Assigned unit reports at `/reports` |
-| `dxos-bulletins`, `dxos-surveys` | `DEMO_OPERATOR_PASSWORD` | `/bulletins`, `/surveys` |
-| `dxos-appointments` | `DEMO_OPERATOR_PASSWORD` | `/appointments` |
-| `dxos-administrative-feedback` | `DEMO_OPERATOR_PASSWORD` | `/administrative-feedback` |
-| `dxos-business-feedback` | `DEMO_OPERATOR_PASSWORD` | `/business-feedback` |
-| `dxos-hotlines` | `DEMO_OPERATOR_PASSWORD` | `/hotlines` |
+| `dxos-admin` | `DEMO_ADMIN_PASSWORD` | `/admin` and all management pages |
+| `dxos-dispatcher` | `DEMO_DISPATCHER_PASSWORD` | Dispatch and SLA dashboard at `/reports` |
+| `dxos-reports` | `DEMO_REPORTS_PASSWORD` | Infrastructure reports at `/reports` |
+| `dxos-reports-environment` | `DEMO_REPORTS_ENVIRONMENT_PASSWORD` | Environment reports at `/reports` |
+| `dxos-bulletins` | `DEMO_BULLETINS_PASSWORD` | `/bulletins` |
+| `dxos-surveys` | `DEMO_SURVEYS_PASSWORD` | `/surveys` |
+| `dxos-appointments` | `DEMO_APPOINTMENTS_PASSWORD` | `/appointments` |
+| `dxos-administrative-feedback` | `DEMO_ADMINISTRATIVE_FEEDBACK_PASSWORD` | `/administrative-feedback` |
+| `dxos-air-quality` | `DEMO_AIR_QUALITY_PASSWORD` | `/air-quality` |
+| `dxos-business-feedback` | `DEMO_BUSINESS_FEEDBACK_PASSWORD` | `/business-feedback` |
+| `dxos-hotlines` | `DEMO_HOTLINES_PASSWORD` | `/hotlines` |
+| `dxos-communications` | `DEMO_COMMUNICATIONS_PASSWORD` | `/communications` |
+| `dxos-community` | `DEMO_COMMUNITY_PASSWORD` | `/community/groups` |
+| `dxos-social-feedback` | `DEMO_SOCIAL_FEEDBACK_PASSWORD` | `/social-feedback` |
+| `dxos-digital-ward` | `DEMO_DIGITAL_WARD_PASSWORD` | `/digital-wards` |
+| `dxos-bus-search` | `DEMO_BUS_SEARCH_PASSWORD` | `/bus-search` |
 
 Report unit staff see cases only after a dispatcher assigns them. For the
 business petition flow, submit with `dxos-citizen`, then sign in as
