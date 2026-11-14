@@ -309,20 +309,34 @@ export function ReportsPage() {
     }
   }, [token, isDispatcher]);
 
-  async function toggleDuplicateReview(reportId: string, similarId: string, isDup: boolean) {
+  async function toggleDuplicateReview(reportId: string, similarId: string, isDup: boolean, isMerge: boolean = false) {
     if (!token || !isDispatcher || dupSaving) return;
     setDupSaving(true);
     setDuplicateReviews((prev) => ({
       ...prev,
       [reportId]: { ...(prev[reportId] || {}), [similarId]: isDup },
+      [similarId]: { ...(prev[similarId] || {}), [reportId]: isDup },
     }));
+
+    // If marked as NOT duplicate ("bỏ 2 cái khỏi list trùng"):
+    // Immediately remove from current triage view
+    if (!isDup) {
+      setTriage((prev) => {
+        if (!prev || prev.report_id !== reportId) return prev;
+        return {
+          ...prev,
+          similar: prev.similar.filter((s) => s.id !== similarId),
+        };
+      });
+    }
+
     try {
       await request<DuplicateReview>(
         `/api/opencity/reports/${encodeURIComponent(reportId)}/duplicate-reviews`,
         token,
         {
           method: 'POST',
-          body: JSON.stringify({ similar_report_id: similarId, is_duplicate: isDup }),
+          body: JSON.stringify({ similar_report_id: similarId, is_duplicate: isDup, merge: isMerge }),
         }
       );
       if (isDup) {
@@ -330,13 +344,23 @@ export function ReportsPage() {
         if (matched?.assigned_unit) {
           setDispatchUnit(matched.assigned_unit);
         }
-        setDispatchNote((prev) => prev ? prev : `Đã xác nhận trùng lặp với hồ sơ #${similarId.slice(0, 8).toUpperCase()}. Điều phối cùng đơn vị để gộp xử lý.`);
+        setDispatchNote(`Đã gộp xử lý cùng hồ sơ #${similarId.slice(0, 8).toUpperCase()} (Trùng lặp sự cố).`);
+        setNotice(`Đã gộp phản ánh #${reportId.slice(0, 8).toUpperCase()} theo hồ sơ #${similarId.slice(0, 8).toUpperCase()}.`);
+      } else {
+        setNotice(`Đã loại bỏ cặp phản ánh #${reportId.slice(0, 8).toUpperCase()} và #${similarId.slice(0, 8).toUpperCase()} khỏi danh sách trùng lặp.`);
       }
       setReports((prev) => prev.map((r) => {
-        if (r.id === reportId) {
-          const currentReviews = { ...(duplicateReviews[reportId] || {}), [similarId]: isDup };
-          const hasConfirmed = Object.values(currentReviews).some(Boolean);
-          return { ...r, duplicate_confirmed: hasConfirmed, duplicate_reviews: currentReviews };
+        if (r.id === reportId || r.id === similarId) {
+          const otherId = r.id === reportId ? similarId : reportId;
+          const updatedReviews = { ...(r.duplicate_reviews || {}), [otherId]: isDup };
+          const hasConfirmed = Object.values(updatedReviews).some(Boolean);
+          const hasActiveDup = isDup ? true : Boolean(r.has_duplicate && Object.entries(updatedReviews).some(([k, v]) => k !== otherId && v !== false));
+          return {
+            ...r,
+            duplicate_confirmed: hasConfirmed,
+            duplicate_reviews: updatedReviews,
+            has_duplicate: hasActiveDup,
+          };
         }
         return r;
       }));
@@ -1148,55 +1172,67 @@ export function ReportsPage() {
                                         </div>
                                       )}
 
-                                      {/* Tích chọn xem có đúng trùng lặp hay không */}
+                                      {/* Controls for Dispatcher: Đúng thì Gộp, Không đúng thì Bỏ khỏi list trùng */}
                                       <div className="candidate-review-controls">
-                                        <label className="candidate-checkbox-label">
-                                          <input
-                                            type="checkbox"
-                                            checked={isConfirmed}
-                                            disabled={dupSaving}
-                                            onChange={(e) => void toggleDuplicateReview(detail.id, item.id, e.target.checked)}
-                                          />
-                                          <span className="checkbox-custom-label">
-                                            {isConfirmed ? (
-                                              <strong style={{ color: '#059669' }}>
-                                                <CheckCircle2 size={15} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                                                ĐÃ XÁC NHẬN: Phản ánh này đúng là trùng lặp sự cố
-                                              </strong>
-                                            ) : (
-                                              <span>
-                                                Tích vào đây nếu <strong>ĐÚNG là phản ánh trùng lặp</strong>
-                                              </span>
-                                            )}
-                                          </span>
-                                        </label>
+                                        {isConfirmed ? (
+                                          <div className="candidate-confirmed-box">
+                                            <div className="confirmed-status-text">
+                                              <CheckCircle2 size={16} color="#059669" />
+                                              <span>ĐÃ GỘP VÀO HỒ SƠ #{item.id.slice(0, 8).toUpperCase()}</span>
+                                            </div>
+                                            <div className="confirmed-actions">
+                                              <Link
+                                                to={`/reports?report=${encodeURIComponent(item.id)}`}
+                                                className="btn-candidate-view"
+                                              >
+                                                <ExternalLink size={12} /> Xem hồ sơ gốc
+                                              </Link>
+                                              <button
+                                                type="button"
+                                                className="btn-candidate-undo"
+                                                disabled={dupSaving}
+                                                onClick={() => void toggleDuplicateReview(detail.id, item.id, false, false)}
+                                                title="Hủy gộp / Bỏ trùng"
+                                              >
+                                                Hoàn tác
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="candidate-action-buttons">
+                                            <div className="candidate-actions-left">
+                                              <Link
+                                                to={`/reports?report=${encodeURIComponent(item.id)}`}
+                                                className="btn-candidate-view"
+                                                title="Mở hồ sơ đối chiếu chi tiết"
+                                              >
+                                                <ExternalLink size={12} /> Xem hồ sơ gốc
+                                              </Link>
+                                            </div>
 
-                                        <div className="candidate-actions">
-                                          <Link
-                                            to={`/reports?report=${encodeURIComponent(item.id)}`}
-                                            className="btn-candidate-view"
-                                            title="Mở hồ sơ này để đối chiếu chi tiết"
-                                          >
-                                            <ExternalLink size={12} /> Xem hồ sơ gốc
-                                          </Link>
+                                            <div className="candidate-actions-right">
+                                              <button
+                                                type="button"
+                                                className="btn-candidate-reject"
+                                                disabled={dupSaving}
+                                                onClick={() => void toggleDuplicateReview(detail.id, item.id, false, false)}
+                                                title="Không phải trùng lặp: Bỏ cả 2 khỏi danh sách trùng"
+                                              >
+                                                <X size={14} /> Không đúng (Bỏ khỏi list trùng)
+                                              </button>
 
-                                          {isConfirmed && (
-                                            <button
-                                              type="button"
-                                              className="btn-candidate-merge"
-                                              onClick={() => {
-                                                if (cand?.assigned_unit) {
-                                                  setDispatchUnit(cand.assigned_unit);
-                                                }
-                                                setDispatchNote(
-                                                  `Đã xác nhận trùng lặp với hồ sơ #${item.id.slice(0, 8).toUpperCase()}. Điều phối cùng đơn vị để gộp xử lý.`
-                                                );
-                                              }}
-                                            >
-                                              🔗 Gộp điều phối cùng đơn vị {cand?.assigned_unit ? `(${unitNames[cand.assigned_unit] || cand.assigned_unit})` : ''}
-                                            </button>
-                                          )}
-                                        </div>
+                                              <button
+                                                type="button"
+                                                className="btn-candidate-merge"
+                                                disabled={dupSaving}
+                                                onClick={() => void toggleDuplicateReview(detail.id, item.id, true, true)}
+                                                title="Xác nhận đúng là phản ánh trùng và gộp xử lý"
+                                              >
+                                                <CheckCircle2 size={14} /> Đúng là trùng - Gộp hồ sơ
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   );
