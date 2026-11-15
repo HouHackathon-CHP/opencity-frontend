@@ -13,11 +13,13 @@ import {
   Image as ImageIcon,
   LoaderCircle,
   MapPin,
+  Mic,
   Plus,
   RefreshCw,
   Search,
   Send,
   Sparkles,
+  Square,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -237,6 +239,81 @@ export function ReportsPage() {
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Voice AI states
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const startVoiceRecording = async () => {
+    if (!token) return;
+    setError('');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (audioBlob.size < 500) return;
+
+        setIsTranscribing(true);
+        setError('');
+        try {
+          const form = new FormData();
+          form.append('audio', audioBlob, 'recording.webm');
+          const resp = await request<{
+            text: string;
+            suggested_title: string;
+            suggested_category: string;
+            suggested_unit: string;
+            urgency: string;
+            duration_seconds: number;
+          }>('/api/opencity/reports/voice-transcribe', token, {
+            method: 'POST',
+            body: form,
+          });
+
+          if (resp.text && resp.text.trim()) {
+            setDescription((prev) => (prev ? `${prev}\n${resp.text}` : resp.text));
+            if (!title.trim() && resp.suggested_title) {
+              setTitle(resp.suggested_title);
+            }
+            if (resp.suggested_category && types.includes(resp.suggested_category)) {
+              setCategory(resp.suggested_category);
+            }
+            setNotice(`🎙️ AI Whisper đã nhận diện: "${resp.text.slice(0, 60)}..." (Tự động chọn lĩnh vực: ${resp.suggested_category})`);
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Không thể nhận diện giọng nói.');
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch {
+      setError('Không thể mở micro. Vui lòng cấp quyền truy cập microphone trên trình duyệt.');
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
 
   useEffect(() => {
     if (!photo) {
@@ -835,6 +912,31 @@ export function ReportsPage() {
                       onChange={(e) => setPhoto(e.target.files?.[0] || null)}
                     />
                   </label>
+
+                  <button
+                    type="button"
+                    className={`media-picker-btn voice-picker ${isRecording ? 'is-recording' : ''}`}
+                    onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                    disabled={isTranscribing}
+                    title="Nói trực tiếp bằng giọng nói, AI tự động chuyển thành chữ và gợi ý lĩnh vực"
+                  >
+                    {isTranscribing ? (
+                      <>
+                        <LoaderCircle size={18} className="spin" />
+                        <span>AI đang nghe & chuyển thành văn bản…</span>
+                      </>
+                    ) : isRecording ? (
+                      <>
+                        <Square size={18} className="rec-dot-icon" />
+                        <span>🔴 Đang ghi âm… (Bấm để dừng & dịch)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mic size={18} />
+                        <span>Nói để nhập tự động (AI Voice)</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 {photoPreview && (
