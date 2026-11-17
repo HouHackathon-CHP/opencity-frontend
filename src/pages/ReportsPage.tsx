@@ -291,7 +291,7 @@ export function ReportsPage() {
             if (resp.suggested_category && types.includes(resp.suggested_category)) {
               setCategory(resp.suggested_category);
             }
-            setNotice(`🎙️ AI Whisper đã nhận diện: "${resp.text.slice(0, 60)}..." (Tự động chọn lĩnh vực: ${resp.suggested_category})`);
+            setNotice(`🎙️ AI PhoWhisper (VinAI) đã nhận diện: "${resp.text.slice(0, 60)}..." (Tự động chọn lĩnh vực: ${resp.suggested_category})`);
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Không thể nhận diện giọng nói.');
