@@ -12,6 +12,7 @@ import {
   FileText,
   Globe,
   Layers,
+  Landmark,
   MapPin,
   Megaphone,
   PhoneCall,
@@ -45,6 +46,7 @@ const CommunityGroupsPage = React.lazy(() => import('./pages/CommunityGroupsPage
 const SocialFeedbackPage = React.lazy(() => import('./pages/SocialFeedbackPage').then((module) => ({ default: module.SocialFeedbackPage })));
 const DigitalWardPage = React.lazy(() => import('./pages/DigitalWardPage').then((module) => ({ default: module.DigitalWardPage })));
 const BusSearchPage = React.lazy(() => import('./pages/BusSearchPage').then((module) => ({ default: module.BusSearchPage })));
+const TourismPage = React.lazy(() => import('./pages/TourismPage').then((module) => ({ default: module.TourismPage })));
 
 type FeatureCardMeta = {
   label: string;
@@ -187,6 +189,16 @@ const FEATURE_CARDS: Record<Feature, FeatureCardMeta> = {
     accentColor: '#0284c7',
     accentBg: '#f0f9ff',
     href: '/bus-search',
+  },
+  tourism: {
+    label: 'Bản đồ Du lịch & Di tích Lịch sử',
+    tag: 'Di sản & Văn hóa OSM',
+    desc: 'Khám phá các di tích lịch sử, bảo tàng, danh thắng nghìn năm Thăng Long - Hà Nội với dữ liệu mở OpenStreetMap.',
+    statusBadge: 'Dữ liệu mở OSM',
+    icon: Landmark,
+    accentColor: '#b45309',
+    accentBg: '#fef3c7',
+    href: '/tourism',
   },
 };
 
@@ -374,6 +386,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/air-quality" element={<FeatureRoute feature="air_quality"><AirQualityPage /></FeatureRoute>} />
                 <Route path="/bus-search" element={<BusSearchPage />} />
                 <Route path="/bus" element={<Navigate to="/bus-search" replace />} />
+                <Route path="/tourism" element={<TourismPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

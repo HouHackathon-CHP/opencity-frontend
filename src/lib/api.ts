@@ -408,3 +408,68 @@ export type BusStopCreateInput = {
   has_shelter?: boolean;
   routes?: string[];
 };
+
+export type TourismDestination = {
+  id: string;
+  name: string;
+  category: string;
+  address: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  heritage_level: string;
+  description?: string;
+  opening_hours: string;
+  admission_fee: string;
+  connecting_bus_routes?: string[];
+  osm_id?: string | null;
+  tags?: string[];
+  audio_guide: boolean;
+  distance_km?: number | null;
+};
+
+export type TourismCategory = {
+  key: string;
+  label: string;
+  count: number;
+  icon: string;
+};
+
+export async function listTourismDestinations(
+  token: string,
+  params: {
+    keyword?: string;
+    category?: string;
+    district?: string;
+    heritage_level?: string;
+    lat?: number;
+    lon?: number;
+    radius_km?: number;
+    audio_guide_only?: boolean;
+  } = {}
+): Promise<TourismDestination[]> {
+  const q = new URLSearchParams();
+  if (params.keyword) q.set('keyword', params.keyword);
+  if (params.category && params.category !== 'all') q.set('category', params.category);
+  if (params.district && params.district !== 'all') q.set('district', params.district);
+  if (params.heritage_level) q.set('heritage_level', params.heritage_level);
+  if (params.lat !== undefined) q.set('lat', params.lat.toString());
+  if (params.lon !== undefined) q.set('lon', params.lon.toString());
+  if (params.radius_km !== undefined) q.set('radius_km', params.radius_km.toString());
+  if (params.audio_guide_only) q.set('audio_guide_only', 'true');
+  const qs = q.toString();
+  return request<TourismDestination[]>(`/api/opencity/tourism/destinations${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function getTourismDestination(id: string, token: string): Promise<TourismDestination> {
+  return request<TourismDestination>(`/api/opencity/tourism/destinations/${id}`, token);
+}
+
+export async function getTourismCategories(token: string): Promise<TourismCategory[]> {
+  return request<TourismCategory[]>('/api/opencity/tourism/categories', token);
+}
+
+export async function getTourismDistricts(token: string): Promise<string[]> {
+  return request<string[]>('/api/opencity/tourism/districts', token);
+}
+

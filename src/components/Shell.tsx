@@ -11,6 +11,7 @@ import {
   Globe,
   Layers,
   LayoutGrid,
+  Landmark,
   LogIn,
   LogOut,
   MapPin,
@@ -56,6 +57,7 @@ export function Shell() {
   const moreRoutes = [
     '/air-quality',
     '/bus-search',
+    '/tourism',
     '/hotlines',
     '/surveys',
     '/appointments',
@@ -69,6 +71,7 @@ export function Shell() {
   const hasMoreItems =
     canSee('air_quality') ||
     canSee('bus_search') ||
+    canSee('tourism') ||
     canSee('hotlines') ||
     canSee('surveys') ||
     canSee('appointments') ||
@@ -186,6 +189,15 @@ export function Shell() {
                       >
                         <BusFront size={16} />
                         <span>Tra cứu xe buýt</span>
+                      </NavLink>
+                    )}
+                    {canSee('tourism') && (
+                      <NavLink
+                        to="/tourism"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <Landmark size={16} />
+                        <span>Di tích & Du lịch</span>
                       </NavLink>
                     )}
                     {canSee('hotlines') && (

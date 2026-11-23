@@ -8143,6 +8143,28 @@ html:has(body.modal-open) {
   border-bottom-color: var(--color-primary);
 }
 
+.bus-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 750;
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--color-text-secondary);
+  line-height: 1.35;
+  margin-left: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.bus-tab-btn.active .bus-tab-badge {
+  background: var(--color-primary-light, #e0f2fe);
+  color: var(--color-primary, #0284c7);
+}
+
 /* Grid Layout */
 .bus-layout-grid {
   display: grid;
@@ -9088,17 +9110,21 @@ html:has(body.modal-open) {
   border-radius: 14px;
   padding: 14px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
 }
 
 .bus-stop-card:hover {
-  border-color: var(--color-primary-border);
+  border-color: rgba(190, 18, 60, 0.45);
   background: var(--color-bg-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(190, 18, 60, 0.16), 0 0 16px rgba(190, 18, 60, 0.08);
 }
 
 .bus-stop-card.selected {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
+  border-color: #be123c;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffffff 100%);
+  box-shadow: 0 10px 28px -4px rgba(190, 18, 60, 0.24), 0 0 0 1.5px #be123c, 0 0 20px rgba(190, 18, 60, 0.18);
 }
 
 .stop-card-top {
