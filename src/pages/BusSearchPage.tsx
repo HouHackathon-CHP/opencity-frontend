@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertCircle,
   AlertTriangle,
   ArrowDownUp,
   ArrowRight,
@@ -51,6 +52,84 @@ import {
 } from '../lib/api';
 
 const POSITRON_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+
+function setup3DBuildings(map: any) {
+  if (map.getLayer('3d-buildings')) return;
+
+  const style = map.getStyle();
+  if (!style || !map.getSource('openmaptiles')) return;
+
+  let firstLabelId: string | undefined;
+  for (const layer of style.layers || []) {
+    if (layer.type === 'symbol') {
+      firstLabelId = layer.id;
+      break;
+    }
+  }
+
+  try {
+    if (map.getLayer('building')) {
+      map.setLayoutProperty('building', 'visibility', 'none');
+    }
+
+    map.addLayer(
+      {
+        id: '3d-buildings',
+        source: 'openmaptiles',
+        'source-layer': 'building',
+        type: 'fill-extrusion',
+        minzoom: 12.5,
+        paint: {
+          'fill-extrusion-color': [
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', 'render_height'], 12],
+            0, '#cbd5e1',
+            15, '#94a3b8',
+            35, '#64748b',
+            70, '#475569',
+            150, '#334155',
+            300, '#1e293b',
+          ] as any,
+          'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12.5, 0,
+            14, [
+              '*',
+              [
+                'case',
+                ['has', 'render_height'],
+                ['max', ['get', 'render_height'], 10],
+                15,
+              ],
+              1.5,
+            ],
+          ] as any,
+          'fill-extrusion-base': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12.5, 0,
+            14, ['coalesce', ['get', 'render_min_height'], 0],
+          ] as any,
+          'fill-extrusion-opacity': 0.92,
+        },
+      } as any,
+      firstLabelId
+    );
+
+    map.setLight({
+      anchor: 'viewport',
+      color: '#f8fafc',
+      intensity: 0.65,
+      position: [1.5, 180, 42],
+    });
+  } catch (err) {
+    console.warn('Failed to add 3D building layer in BusSearchPage:', err);
+  }
+}
 
 function calcDistKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -228,6 +307,15 @@ export function BusSearchPage() {
     routes: '',
   });
   const [isSubmittingEntity, setIsSubmittingEntity] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'route' | 'stop'; id: string; name: string } | null>(null);
+  const [isDeletingEntity, setIsDeletingEntity] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -321,12 +409,12 @@ export function BusSearchPage() {
           }
         },
         (err) => {
-          alert('Không thể định vị vị trí của bạn: ' + (err.message || 'Trình duyệt từ chối quyền truy cập vị trí.'));
+          setToast({ message: 'Không thể định vị vị trí: ' + (err.message || 'Trình duyệt từ chối quyền truy cập vị trí.'), type: 'error' });
         },
         { timeout: 8000, enableHighAccuracy: true }
       );
     } else {
-      alert('Trình duyệt của bạn không hỗ trợ định vị Geolocation.');
+      setToast({ message: 'Trình duyệt của bạn không hỗ trợ định vị Geolocation.', type: 'info' });
     }
   }, [fetchNearbyStops]);
 
@@ -468,7 +556,7 @@ export function BusSearchPage() {
       await fetchStops();
       await fetchAudit();
     } catch (err: any) {
-      setSyncStatusMsg(err.message || 'Lỗi khi đồng bộ OpenStreetMap.');
+      setSyncStatusMsg(err.message || 'Lỗi khi đồng bộ dữ liệu.');
     } finally {
       setIsSyncing(false);
     }
@@ -490,14 +578,14 @@ export function BusSearchPage() {
           replace_existing: importReplace,
         }),
       });
-      alert(result.message);
+      setToast({ message: result.message, type: 'success' });
       setIsImportModalOpen(false);
       setImportJsonText('');
       await fetchRoutes();
       await fetchStops();
       await fetchAudit();
     } catch (err: any) {
-      alert(`Lỗi nạp dữ liệu: ${err.message}`);
+      setToast({ message: `Lỗi nạp dữ liệu: ${err.message}`, type: 'error' });
     } finally {
       setIsSyncing(false);
     }
@@ -572,9 +660,9 @@ export function BusSearchPage() {
       await fetchAudit();
       setIsAddRouteModalOpen(false);
       setSelectedRoute(created);
-      alert(`Đã thêm thành công Tuyến ${created.route_number}!`);
+      setToast({ message: `Đã thêm thành công Tuyến ${created.route_number}!`, type: 'success' });
     } catch (err: any) {
-      alert(`Lỗi khi tạo tuyến: ${err.message}`);
+      setToast({ message: `Lỗi khi tạo tuyến: ${err.message}`, type: 'error' });
     } finally {
       setIsSubmittingEntity(false);
     }
@@ -603,28 +691,17 @@ export function BusSearchPage() {
       await fetchAudit();
       setSelectedRoute(updated);
       setIsEditRouteModalOpen(false);
-      alert(`Đã cập nhật thành công Tuyến ${updated.route_number}!`);
+      setToast({ message: `Đã cập nhật thành công Tuyến ${updated.route_number}!`, type: 'success' });
     } catch (err: any) {
-      alert(`Lỗi khi cập nhật tuyến: ${err.message}`);
+      setToast({ message: `Lỗi khi cập nhật tuyến: ${err.message}`, type: 'error' });
     } finally {
       setIsSubmittingEntity(false);
     }
   };
 
-  const handleDeleteRoute = async (routeId: string, routeNumber: string) => {
+  const handleDeleteRoute = (routeId: string, routeNumber: string) => {
     if (!token) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa Tuyến ${routeNumber} khỏi hệ thống?`)) return;
-    try {
-      await request(`/api/opencity/bus/routes/${encodeURIComponent(routeId)}`, token, {
-        method: 'DELETE',
-      });
-      setSelectedRoute(null);
-      await fetchRoutes();
-      await fetchAudit();
-      alert(`Đã xóa Tuyến ${routeNumber} thành công.`);
-    } catch (err: any) {
-      alert(`Lỗi khi xóa tuyến: ${err.message}`);
-    }
+    setDeleteConfirm({ type: 'route', id: routeId, name: `Tuyến ${routeNumber}` });
   };
 
   const handleCreateStop = async (e: React.FormEvent) => {
@@ -658,9 +735,9 @@ export function BusSearchPage() {
           duration: 800,
         });
       }
-      alert(`Đã thêm thành công điểm dừng "${created.name}"!`);
+      setToast({ message: `Đã thêm thành công điểm dừng "${created.name}"!`, type: 'success' });
     } catch (err: any) {
-      alert(`Lỗi khi tạo điểm dừng: ${err.message}`);
+      setToast({ message: `Lỗi khi tạo điểm dừng: ${err.message}`, type: 'error' });
     } finally {
       setIsSubmittingEntity(false);
     }
@@ -689,27 +766,45 @@ export function BusSearchPage() {
       await fetchStops();
       await fetchAudit();
       setIsEditStopModalOpen(false);
-      alert(`Đã cập nhật trạm dừng "${updated.name}" thành công!`);
+      setToast({ message: `Đã cập nhật trạm dừng "${updated.name}" thành công!`, type: 'success' });
     } catch (err: any) {
-      alert(`Lỗi khi cập nhật trạm: ${err.message}`);
+      setToast({ message: `Lỗi khi cập nhật trạm: ${err.message}`, type: 'error' });
     } finally {
       setIsSubmittingEntity(false);
     }
   };
 
-  const handleDeleteStop = async (stopId: string, stopName: string) => {
+  const handleDeleteStop = (stopId: string, stopName: string) => {
     if (!token) return;
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa trạm dừng "${stopName}"?`)) return;
+    setDeleteConfirm({ type: 'stop', id: stopId, name: `Trạm "${stopName}"` });
+  };
+
+  const executeDeleteEntity = async () => {
+    if (!deleteConfirm || !token) return;
+    setIsDeletingEntity(true);
     try {
-      await request(`/api/opencity/bus/stops/${encodeURIComponent(stopId)}`, token, {
-        method: 'DELETE',
-      });
-      if (selectedStopId === stopId) setSelectedStopId(null);
-      await fetchStops();
-      await fetchAudit();
-      alert(`Đã xóa trạm dừng "${stopName}" thành công.`);
+      if (deleteConfirm.type === 'route') {
+        await request(`/api/opencity/bus/routes/${encodeURIComponent(deleteConfirm.id)}`, token, {
+          method: 'DELETE',
+        });
+        setSelectedRoute(null);
+        await fetchRoutes();
+        await fetchAudit();
+        setToast({ message: `Đã xóa ${deleteConfirm.name} thành công.`, type: 'success' });
+      } else {
+        await request(`/api/opencity/bus/stops/${encodeURIComponent(deleteConfirm.id)}`, token, {
+          method: 'DELETE',
+        });
+        if (selectedStopId === deleteConfirm.id) setSelectedStopId(null);
+        await fetchStops();
+        await fetchAudit();
+        setToast({ message: `Đã xóa ${deleteConfirm.name} thành công.`, type: 'success' });
+      }
+      setDeleteConfirm(null);
     } catch (err: any) {
-      alert(`Lỗi khi xóa trạm: ${err.message}`);
+      setToast({ message: `Lỗi khi xóa: ${err.message}`, type: 'error' });
+    } finally {
+      setIsDeletingEntity(false);
     }
   };
 
@@ -773,6 +868,8 @@ export function BusSearchPage() {
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-left');
 
     map.on('load', () => {
+      setup3DBuildings(map);
+
       map.addSource('route-path-source', {
         type: 'geojson',
         data: {
@@ -981,7 +1078,7 @@ export function BusSearchPage() {
             <div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
               <small style="color: #0369a1; font-weight: 700; font-size: 11px;">CHỌN TUYẾN ĐỂ XEM LỘ TRÌNH (${passingCount}):</small>
               <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px;">
-                ${routesBadgesHtml || '<span style="color:#94a3b8;font-size:11px;">Chưa gắn tuyến OSM</span>'}
+                ${routesBadgesHtml || '<span style="color:#94a3b8;font-size:11px;">Chưa gắn tuyến</span>'}
               </div>
             </div>
           </div>
@@ -1630,7 +1727,7 @@ export function BusSearchPage() {
           <div style="font-weight: 800; font-size: 13px; color: ${routeColor}">Trạm #${stop.stop_order}: ${stop.name}</div>
           <div style="font-size: 12px; color: #475569; margin-top: 3px;">${stop.address || 'Hà Nội'}</div>
           ${walkInfoHtml}
-          <div style="font-size: 11px; color: #0284c7; margin-top: 5px; font-weight: 600;">Tuyến ${selectedRoute.route_number} • OpenStreetMap</div>
+          <div style="font-size: 11px; color: #0284c7; margin-top: 5px; font-weight: 600;">Tuyến ${selectedRoute.route_number} • Mạng lưới xe buýt</div>
         </div>
       `);
 
@@ -1688,8 +1785,8 @@ export function BusSearchPage() {
             <span className="badge-pill-light">
               <BusFront size={14} /> OpenCity Public Transport
             </span>
-            <span className="badge-pill-light osm-badge">
-              <Compass size={14} /> Dữ liệu mở OpenStreetMap (ODbL)
+            <span className="badge-pill-light">
+              <Compass size={14} /> Mạng lưới Giao thông Thủ đô
             </span>
           </div>
           <h1>Tìm buýt & Tra cứu tuyến xe</h1>
@@ -1703,9 +1800,9 @@ export function BusSearchPage() {
             type="button"
             className="btn btn-outline-white"
             onClick={() => setTab('audit')}
-            title="Dữ liệu mạng lưới giao thông OpenStreetMap"
+            title="Tổng quan mạng lưới giao thông"
           >
-            <Database size={16} /> Dữ liệu OpenStreetMap
+            <Info size={16} /> Tổng quan mạng lưới
           </button>
           {isOperator && (
             <button
@@ -1713,7 +1810,7 @@ export function BusSearchPage() {
               className="btn btn-primary-contrast"
               onClick={() => setIsImportModalOpen(true)}
             >
-              <Upload size={16} /> Nạp / Đồng bộ OSM
+              <Upload size={16} /> Nạp dữ liệu
             </button>
           )}
         </div>
@@ -1779,7 +1876,7 @@ export function BusSearchPage() {
             className={`bus-tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
             onClick={() => setTab('audit')}
           >
-            <Info size={16} /> Dữ liệu OpenStreetMap
+            <Info size={16} /> Tổng quan mạng lưới
           </button>
         </div>
 
@@ -1859,7 +1956,15 @@ export function BusSearchPage() {
                               >
                                 <div
                                   className="mini-route-badge"
-                                  style={{ backgroundColor: r.color, width: 28, height: 28, fontSize: 11, borderRadius: 6 }}
+                                  style={{
+                                    backgroundColor: r.color,
+                                    height: 28,
+                                    minWidth: 28,
+                                    width: 'auto',
+                                    padding: '0 6px',
+                                    fontSize: r.route_number.length >= 4 ? 10 : 11,
+                                    borderRadius: 6,
+                                  }}
                                 >
                                   {r.route_number}
                                 </div>
@@ -1890,7 +1995,15 @@ export function BusSearchPage() {
                                   >
                                     <div
                                       className="mini-route-badge"
-                                      style={{ backgroundColor: r.color, width: 28, height: 28, fontSize: 11, borderRadius: 6 }}
+                                      style={{
+                                        backgroundColor: r.color,
+                                        height: 28,
+                                        minWidth: 28,
+                                        width: 'auto',
+                                        padding: '0 6px',
+                                        fontSize: r.route_number.length >= 4 ? 10 : 11,
+                                        borderRadius: 6,
+                                      }}
                                     >
                                       {r.route_number}
                                     </div>
@@ -2098,7 +2211,16 @@ export function BusSearchPage() {
                     <div className="route-header-row">
                       <div
                         className="route-badge"
-                        style={{ backgroundColor: selectedRoute.color }}
+                        style={{
+                          backgroundColor: selectedRoute.color,
+                          ...(selectedRoute.route_number.length >= 5
+                            ? { minWidth: 54, fontSize: '14px', padding: '0 10px', letterSpacing: '-0.3px' }
+                            : selectedRoute.route_number.length >= 4
+                              ? { minWidth: 50, fontSize: '15px', padding: '0 9px' }
+                              : selectedRoute.route_number.length === 3
+                                ? { minWidth: 48, fontSize: '16.5px', padding: '0 8px' }
+                                : { minWidth: 48, padding: '0 8px' }),
+                        }}
                       >
                         {selectedRoute.route_number}
                       </div>
@@ -2133,14 +2255,14 @@ export function BusSearchPage() {
                       <div className="meta-item">
                         <Layers size={15} />
                         <div>
-                          <small>OSM Relation</small>
+                          <small>Mã định danh tuyến</small>
                           <a
                             href={`https://www.openstreetmap.org/relation/${selectedRoute.osm_relation_id?.replace('osm-rel-', '')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="osm-link"
                           >
-                            {selectedRoute.osm_relation_id || 'OSM v2'} <ExternalLink size={12} />
+                            {selectedRoute.osm_relation_id || 'Tiêu chuẩn'} <ExternalLink size={12} />
                           </a>
                         </div>
                       </div>
@@ -2461,7 +2583,16 @@ export function BusSearchPage() {
                         >
                           <div
                             className="mini-route-badge"
-                            style={{ backgroundColor: r.color }}
+                            style={{
+                              backgroundColor: r.color,
+                              ...(r.route_number.length >= 5
+                                ? { minWidth: 46, fontSize: '11.5px', padding: '0 8px', letterSpacing: '-0.3px' }
+                                : r.route_number.length >= 4
+                                  ? { minWidth: 42, fontSize: '12.5px', padding: '0 7px' }
+                                  : r.route_number.length === 3
+                                    ? { minWidth: 40, fontSize: '13.5px', padding: '0 6px' }
+                                    : { minWidth: 38, padding: '0 6px' }),
+                            }}
                           >
                             {r.route_number}
                           </div>
@@ -2814,7 +2945,7 @@ export function BusSearchPage() {
                                       e.stopPropagation();
                                       const text = `🚌 Lộ trình xe buýt Hà Nội: Đi từ "${rec.board_stop.name}" đến "${rec.alight_stop.name}" bằng Tuyến ${rec.route_number}. Ước tính ${rec.estimated_minutes} phút (${rec.stops_count} trạm). Xuống tại ${rec.alight_stop.name}.`;
                                       navigator.clipboard?.writeText(text);
-                                      alert('Đã sao chép hướng dẫn lộ trình vào bộ nhớ tạm!');
+                                      setToast({ message: 'Đã sao chép hướng dẫn lộ trình vào bộ nhớ tạm!', type: 'success' });
                                     }}
                                   >
                                     📋 Sao chép hành trình
@@ -3040,7 +3171,7 @@ export function BusSearchPage() {
                             {stop.has_shelter ? ' Có nhà chờ' : ' Biển dừng'}
                           </span>
                           {stop.osm_node_id && (
-                            <span className="osm-tag">OSM: {stop.osm_node_id}</span>
+                            <span className="osm-tag">Mã điểm: {stop.osm_node_id}</span>
                           )}
                         </div>
 
@@ -3184,30 +3315,30 @@ export function BusSearchPage() {
               <div className="bus-audit-view">
                 <div className="audit-highlight-banner">
                   <div className="banner-badge">
-                    <Compass size={16} /> OpenStreetMap Public Transport Schema v2
+                    <Compass size={14} /> Mạng lưới Giao thông Công cộng
                   </div>
-                  <h3>Dữ liệu mạng lưới vận tải hành khách công cộng OpenStreetMap</h3>
+                  <h3>Tổng quan mạng lưới xe buýt Hà Nội</h3>
                   <p>
-                    Dữ liệu tuyến và điểm đón trả xe buýt tại Hà Nội được kết nối và chuẩn hóa từ cộng đồng bản đồ mở OpenStreetMap (ODbL 1.0). Hệ thống liên tục cập nhật và kiểm soát chất lượng dữ liệu để phục vụ nhu cầu đi lại của người dân.
+                    Dữ liệu số hóa 184 tuyến xe buýt và hơn 5.000 điểm đón trả, phục vụ nhu cầu tra cứu và di chuyển thuận tiện cho người dân Thủ đô.
                   </p>
                 </div>
 
                 {audit && (
                   <div className="audit-metrics-grid">
                     <div className="audit-metric-card">
-                      <span>Tỷ lệ chuẩn hóa lộ trình</span>
+                      <span>Tỷ lệ chuẩn hóa</span>
                       <strong>{audit.completeness_percentage}%</strong>
-                      <small>Tuyến có đủ dữ liệu lộ trình 2 chiều</small>
+                      <small>Tuyến có đủ lộ trình 2 chiều</small>
                     </div>
                     <div className="audit-metric-card">
-                      <span>Tổng số tuyến khai thác</span>
+                      <span>Tuyến vận hành</span>
                       <strong>{audit.total_routes}</strong>
-                      <small>Standard: {audit.standard_routes_count} • BRT: {audit.brt_routes_count} • Electric: {audit.electric_routes_count}</small>
+                      <small>Tiêu chuẩn: {audit.standard_routes_count} • Điện: {audit.electric_routes_count} • BRT: {audit.brt_routes_count}</small>
                     </div>
                     <div className="audit-metric-card">
-                      <span>Điểm dừng được số hóa</span>
+                      <span>Điểm dừng số hóa</span>
                       <strong>{audit.total_stops.toLocaleString('vi-VN')}</strong>
-                      <small>Có tọa độ địa lý chính xác</small>
+                      <small>Tọa độ vị trí chính xác</small>
                     </div>
                   </div>
                 )}
@@ -3218,13 +3349,13 @@ export function BusSearchPage() {
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                           <ShieldCheck size={18} color="#0284c7" />
-                          <h4 style={{ margin: 0, color: '#0f172a' }}>Bảng điều khiển Quản trị Mạng lưới Xe buýt</h4>
+                          <h4 style={{ margin: 0, color: '#0f172a' }}>Bảng điều khiển Quản trị Tuyến</h4>
                           <span style={{ fontSize: '11px', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: 6, fontWeight: 700 }}>
                             dxos-bus-search
                           </span>
                         </div>
                         <p style={{ margin: 0 }}>
-                          Thêm mới thủ công tuyến buýt và điểm đón/trả, hoặc đồng bộ trực tuyến với OpenStreetMap.
+                          Quản lý danh mục tuyến buýt, điểm đón/trả và cập nhật số liệu mạng lưới.
                         </p>
                       </div>
                       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -3263,7 +3394,7 @@ export function BusSearchPage() {
                             </>
                           ) : (
                             <>
-                              <RefreshCw size={15} /> Đồng bộ OSM
+                              <RefreshCw size={15} /> Đồng bộ dữ liệu
                             </>
                           )}
                         </button>
@@ -3321,10 +3452,10 @@ export function BusSearchPage() {
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a' }}>
-                          Khu vực Quản trị & Điều hành Mạng lưới
+                          Khu vực Quản trị & Điều hành Tuyến
                         </div>
                         <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: 2 }}>
-                          Để thêm mới tuyến buýt, chỉnh sửa điểm dừng hoặc đồng bộ dữ liệu, vui lòng đăng nhập tài khoản điều hành.
+                          Đăng nhập tài khoản điều hành để quản lý tuyến buýt, điểm đón trả và cập nhật số liệu.
                         </div>
                       </div>
                     </div>
@@ -3340,18 +3471,32 @@ export function BusSearchPage() {
                 )}
 
                 <div className="audit-issues-section">
-                  <h4>Kiểm soát chất lượng dữ liệu ({audit?.issues?.length ?? 0})</h4>
+                  <h4>Kiểm tra & Chuẩn hóa dữ liệu ({audit?.issues?.length ?? 0})</h4>
                   <div className="issues-list">
                     {audit?.issues && audit.issues.length > 0 ? (
-                      audit.issues.map((issue, idx) => (
-                        <div key={idx} className={`issue-item ${issue.level}`}>
-                          <AlertTriangle size={16} className="issue-icon" />
-                          <div>
-                            <strong>{issue.title}</strong>
-                            <p>{issue.description}</p>
+                      audit.issues.map((issue, idx) => {
+                        const cleanTitle = issue.title
+                          .replace(/\(shelter\)/gi, '')
+                          .replace(/OpenStreetMap/gi, '')
+                          .replace('Relation ID', 'mã định danh')
+                          .trim();
+                        const cleanDesc = issue.description.includes('OpenStreetMap') || issue.description.includes('shelter')
+                          ? 'Hệ thống đang tiếp tục khảo sát thực địa để hoàn thiện thông tin nhà chờ và tiện ích điểm dừng.'
+                          : issue.description;
+                        return (
+                          <div key={idx} className={`issue-item ${issue.level}`}>
+                            {issue.level === 'warning' ? (
+                              <AlertTriangle size={16} className="issue-icon" color="#d97706" />
+                            ) : (
+                              <Info size={16} className="issue-icon" color="#0284c7" />
+                            )}
+                            <div>
+                              <strong>{cleanTitle}</strong>
+                              <p>{cleanDesc}</p>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     ) : (
                       <div className="issue-item success" style={{ background: '#f0fdf4', borderColor: '#bbf7d0', color: '#166534', padding: '14px 18px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <CheckCircle2 size={18} color="#16a34a" />
@@ -3372,7 +3517,7 @@ export function BusSearchPage() {
           <div className="bus-right-map-panel">
             <div className="map-view-header">
               <div className="map-title-badge">
-                <Compass size={14} /> Bản đồ không gian 3D • MapLibre GL
+                <Compass size={14} /> Bản đồ không gian 3D
               </div>
               {selectedRoute ? (
                 <div className="map-route-indicator" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -3434,11 +3579,19 @@ export function BusSearchPage() {
                   className="map-float-btn"
                   onClick={() => {
                     if (mapRef.current) {
-                      mapRef.current.easeTo({ pitch: 65, bearing: -20, duration: 800 });
+                      setup3DBuildings(mapRef.current);
+                      const currentZoom = mapRef.current.getZoom();
+                      mapRef.current.easeTo({
+                        pitch: 58,
+                        bearing: -18,
+                        zoom: currentZoom < 14 ? 14.8 : currentZoom,
+                        duration: 800,
+                      });
                     }
                   }}
-                  title="Nghiêng góc nhìn 3D"
+                  title="Nghiêng góc nhìn 3D và hiển thị khối nhà"
                 >
+                  <Layers size={13} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }} />
                   Góc nhìn 3D
                 </button>
                 <button
@@ -3470,7 +3623,7 @@ export function BusSearchPage() {
 
             <div className="map-footer-attribution">
               <span>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL)</span>
-              <span>• MapLibre GL 3D • OpenFreeMap Tiles</span>
+              <span>• Không gian 3D</span>
             </div>
           </div>
         </div>
@@ -3610,7 +3763,7 @@ export function BusSearchPage() {
                         type="color"
                         value={routeFormData.color}
                         onChange={(e) => setRouteFormData({ ...routeFormData, color: e.target.value })}
-                        style={{ width: 42, height: 38, padding: 2, borderRadius: 6, border: '1px solid #cbd5e1', cursor: 'pointer' }}
+                        style={{ width: 44, height: 42, padding: 3, borderRadius: 10, border: '1.5px solid #e2e8f0', cursor: 'pointer', background: '#f8fafc' }}
                       />
                       <input
                         type="text"
@@ -3782,7 +3935,7 @@ export function BusSearchPage() {
           <div className="modal-card bus-import-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>
-                <Upload size={18} /> Nạp dữ liệu OpenStreetMap (GeoJSON / JSON)
+                <Upload size={18} /> Nạp dữ liệu mạng lưới (GeoJSON / JSON)
               </h3>
               <button
                 type="button"
@@ -3836,6 +3989,58 @@ export function BusSearchPage() {
                 disabled={isSyncing || !importJsonText.trim()}
               >
                 {isSyncing ? 'Đang nạp dữ liệu...' : 'Xác nhận nạp dữ liệu'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {toast && (
+        <div className={`custom-toast custom-toast-${toast.type}`}>
+          <div className="custom-toast-icon">
+            {toast.type === 'success' && <CheckCircle2 size={18} />}
+            {toast.type === 'error' && <AlertCircle size={18} />}
+            {toast.type === 'info' && <Info size={18} />}
+          </div>
+          <span className="custom-toast-msg">{toast.message}</span>
+          <button
+            type="button"
+            className="custom-toast-close"
+            onClick={() => setToast(null)}
+            aria-label="Đóng"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {deleteConfirm && (
+        <div className="modal-backdrop" onClick={() => !isDeletingEntity && setDeleteConfirm(null)}>
+          <div className="modal-card delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-confirm-icon-wrap">
+              <Trash2 size={26} />
+            </div>
+            <h3 className="delete-confirm-title">
+              {deleteConfirm.type === 'route' ? 'Xác nhận xóa tuyến buýt' : 'Xác nhận xóa điểm dừng'}
+            </h3>
+            <p className="delete-confirm-desc">
+              Bạn có chắc chắn muốn xóa <strong>{deleteConfirm.name}</strong> khỏi hệ thống? Thao tác này sẽ xóa vĩnh viễn và không thể hoàn tác.
+            </p>
+            <div className="delete-confirm-actions">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isDeletingEntity}
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger-solid"
+                onClick={executeDeleteEntity}
+                disabled={isDeletingEntity}
+              >
+                {isDeletingEntity ? 'Đang xóa...' : 'Xác nhận xóa'}
               </button>
             </div>
           </div>

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ChevronDown,
   ClipboardList,
+  Compass,
   ExternalLink,
   Globe,
   Layers,
@@ -192,13 +193,22 @@ export function Shell() {
                       </NavLink>
                     )}
                     {canSee('tourism') && (
-                      <NavLink
-                        to="/tourism"
-                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
-                      >
-                        <Landmark size={16} />
-                        <span>Di tích & Du lịch</span>
-                      </NavLink>
+                      <>
+                        <NavLink
+                          to="/tourism"
+                          className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                        >
+                          <Compass size={16} />
+                          <span>Bản đồ Du lịch</span>
+                        </NavLink>
+                        <NavLink
+                          to="/heritage"
+                          className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                        >
+                          <Landmark size={16} />
+                          <span>Bản đồ Di tích</span>
+                        </NavLink>
+                      </>
                     )}
                     {canSee('hotlines') && (
                       <NavLink

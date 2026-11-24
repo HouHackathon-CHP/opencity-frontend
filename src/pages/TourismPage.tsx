@@ -1,33 +1,42 @@
 // SPDX-License-Identifier: Apache-2.0
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertCircle,
   Building2,
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Compass,
   Crosshair,
-  Database,
   ExternalLink,
   Landmark,
   Layers,
   MapPin,
   Navigation,
+  Pencil,
+  Plus,
   RefreshCw,
   Search,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react';
 import * as maplibregl from 'maplibre-gl';
 import type { GeoJSONSource, Map as MapLibreMap, Marker } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
+import { canManage } from '../lib/permissions';
 import {
+  createTourismDestination,
+  deleteTourismDestination,
   getTourismCategories,
   getTourismDistricts,
   listTourismDestinations,
+  updateTourismDestination,
   type TourismDestination,
+  type TourismDestinationInput,
 } from '../lib/api';
 
 const POSITRON_STYLE = 'https://tiles.openfreemap.org/styles/positron';
@@ -93,7 +102,6 @@ const CATEGORIES: Record<string, CategoryMeta> = {
   },
 };
 
-// 3D Buildings Extrusion setup for MapLibre vector tiles
 function setup3DBuildings(map: any) {
   if (map.getLayer('3d-buildings')) return;
 
@@ -172,12 +180,27 @@ function setup3DBuildings(map: any) {
   }
 }
 
-export function TourismPage() {
+export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritage' } = {}) {
   const { user } = useAuth();
   const token = user?.access_token || '';
 
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'all';
+
+  const isHeritage =
+    initialMode === 'heritage' ||
+    location.pathname.startsWith('/heritage') ||
+    searchParams.get('mode') === 'heritage';
+  const mode: 'tourism' | 'heritage' = isHeritage ? 'heritage' : 'tourism';
+
+  const defaultTab = isHeritage ? 'monument' : 'all';
+  const activeTab = searchParams.get('tab') || defaultTab;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [mode]);
 
   const [destinations, setDestinations] = useState<TourismDestination[]>([]);
   const [loading, setLoading] = useState(false);
@@ -191,7 +214,40 @@ export function TourismPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [is3D, setIs3D] = useState(true);
-  const [isOsmModalOpen, setIsOsmModalOpen] = useState(false);
+
+  const operator = canManage(user, 'tourism');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<TourismDestination | null>(null);
+  const [formBusy, setFormBusy] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<TourismDestination | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const defaultForm: TourismDestinationInput = {
+    name: '',
+    category: 'monument',
+    address: '',
+    district: 'Hoàn Kiếm',
+    latitude: 21.03,
+    longitude: 105.85,
+    description: '',
+    opening_hours: '8:00 - 17:00',
+    admission_fee: 'Miễn phí',
+    heritage_level: 'Di tích Lịch sử - Văn hóa',
+    connecting_bus_routes: [],
+    tags: [],
+    audio_guide: false,
+    active: true,
+  };
+
+  const [formData, setFormData] = useState<TourismDestinationInput>(defaultForm);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -266,7 +322,7 @@ export function TourismPage() {
 
   const handleLocateMe = () => {
     if (!navigator.geolocation) {
-      alert('Trình duyệt không hỗ trợ định vị GPS.');
+      setToast({ message: 'Trình duyệt không hỗ trợ định vị GPS.', type: 'info' });
       return;
     }
     setIsLocating(true);
@@ -281,10 +337,100 @@ export function TourismPage() {
       },
       () => {
         setIsLocating(false);
-        alert('Không thể xác định vị trí hiện tại. Vui lòng bật quyền truy cập GPS.');
+        setToast({ message: 'Không thể xác định vị trí. Vui lòng cấp quyền truy cập GPS trong trình duyệt.', type: 'error' });
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
+  };
+
+  const handleOpenCreate = () => {
+    setEditingItem(null);
+    let centerLat = 21.03;
+    let centerLng = 105.85;
+    if (mapRef.current) {
+      const c = mapRef.current.getCenter();
+      centerLat = Number(c.lat.toFixed(5));
+      centerLng = Number(c.lng.toFixed(5));
+    }
+    setFormData({
+      ...defaultForm,
+      latitude: centerLat,
+      longitude: centerLng,
+      district: selectedDistrict !== 'all' ? selectedDistrict : 'Hoàn Kiếm',
+    });
+    setFormError('');
+    setIsFormOpen(true);
+  };
+
+  const handleOpenEdit = (item: TourismDestination, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingItem(item);
+    setFormData({
+      name: item.name,
+      category: item.category,
+      address: item.address || '',
+      district: item.district || 'Hà Nội',
+      latitude: item.latitude,
+      longitude: item.longitude,
+      description: item.description || '',
+      opening_hours: item.opening_hours || '8:00 - 17:00',
+      admission_fee: item.admission_fee || 'Miễn phí',
+      heritage_level: item.heritage_level || 'Di tích Lịch sử - Văn hóa',
+      connecting_bus_routes: item.connecting_bus_routes || [],
+      tags: item.tags || [],
+      audio_guide: !!item.audio_guide,
+      active: item.active !== false,
+    });
+    setFormError('');
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = (item: TourismDestination, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!token || !operator) return;
+    setDeleteConfirmItem(item);
+  };
+
+  const executeDelete = async () => {
+    if (!deleteConfirmItem || !token || !operator) return;
+    setIsDeleting(true);
+    try {
+      await deleteTourismDestination(token, deleteConfirmItem.id);
+      setToast({ message: `Đã xóa thành công "${deleteConfirmItem.name}".`, type: 'success' });
+      if (selectedId === deleteConfirmItem.id) setSelectedId(null);
+      setDeleteConfirmItem(null);
+      await loadData();
+    } catch (err) {
+      setToast({
+        message: err instanceof Error ? err.message : 'Không thể xóa điểm di tích.',
+        type: 'error',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleSaveForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !operator || formBusy) return;
+    setFormBusy(true);
+    setFormError('');
+    try {
+      if (editingItem) {
+        await updateTourismDestination(token, editingItem.id, formData);
+        setToast({ message: `Đã cập nhật thành công "${formData.name}".`, type: 'success' });
+      } else {
+        const created = await createTourismDestination(token, formData);
+        setToast({ message: `Đã thêm thành công "${created.name}".`, type: 'success' });
+        setSelectedId(created.id);
+      }
+      setIsFormOpen(false);
+      await loadData();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Lỗi khi lưu dữ liệu điểm di tích.');
+    } finally {
+      setFormBusy(false);
+    }
   };
 
   const toggle3D = () => {
@@ -637,15 +783,37 @@ export function TourismPage() {
     }
   }, [userLocation]);
 
+  const heritageTabs = [
+    { key: 'all', label: 'Tất cả di tích', icon: Landmark, color: '#0f172a', bg: '#f1f5f9' },
+    { key: 'monument', label: 'Di tích Lịch sử', icon: Landmark, color: '#be123c', bg: '#fff1f2' },
+    { key: 'museum', label: 'Bảo tàng', icon: Building2, color: '#3730a3', bg: '#eef2ff' },
+    { key: 'religious', label: 'Chùa & Đền cổ', icon: Sparkles, color: '#b45309', bg: '#fffbeb' },
+    { key: 'cultural', label: 'Không gian Văn hóa', icon: Layers, color: '#6d28d9', bg: '#f5f3ff' },
+    { key: 'landscape', label: 'Danh lam Thắng cảnh', icon: Compass, color: '#047857', bg: '#ecfdf5' },
+  ];
+
+  const tourismTabs = [
+    { key: 'all', label: 'Tất cả điểm đến', icon: Compass, color: '#0f172a', bg: '#f1f5f9' },
+    { key: 'monument', label: 'Di tích Lịch sử', icon: Landmark, color: '#be123c', bg: '#fff1f2' },
+    { key: 'landscape', label: 'Danh lam Thắng cảnh', icon: Compass, color: '#047857', bg: '#ecfdf5' },
+    { key: 'cultural', label: 'Không gian Văn hóa', icon: Layers, color: '#6d28d9', bg: '#f5f3ff' },
+    { key: 'religious', label: 'Chùa & Tâm linh', icon: Sparkles, color: '#b45309', bg: '#fffbeb' },
+    { key: 'museum', label: 'Bảo tàng & Triển lãm', icon: Building2, color: '#3730a3', bg: '#eef2ff' },
+  ];
+
+  const currentTabs = isHeritage ? heritageTabs : tourismTabs;
+
   return (
     <div className="bus-search-page">
       <div
         className="bus-hero page-width"
         style={{
-          background:
-            'radial-gradient(circle at 85% 20%, rgba(254, 205, 211, 0.32) 0%, rgba(244, 63, 94, 0.18) 35%, transparent 65%), linear-gradient(135deg, #4c0519 0%, #881337 45%, #be123c 100%)',
-          boxShadow:
-            '0 16px 42px -6px rgba(190, 18, 60, 0.42), 0 0 70px -10px rgba(244, 63, 94, 0.32)',
+          background: isHeritage
+            ? 'radial-gradient(circle at 85% 20%, rgba(254, 205, 211, 0.32) 0%, rgba(244, 63, 94, 0.18) 35%, transparent 65%), linear-gradient(135deg, #4c0519 0%, #881337 45%, #be123c 100%)'
+            : 'radial-gradient(circle at 85% 20%, rgba(167, 243, 208, 0.35) 0%, rgba(16, 185, 129, 0.2) 35%, transparent 65%), linear-gradient(135deg, #064e3b 0%, #047857 45%, #0f766e 100%)',
+          boxShadow: isHeritage
+            ? '0 16px 42px -6px rgba(190, 18, 60, 0.42), 0 0 70px -10px rgba(244, 63, 94, 0.32)'
+            : '0 16px 42px -6px rgba(4, 120, 87, 0.42), 0 0 70px -10px rgba(16, 185, 129, 0.32)',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -657,7 +825,9 @@ export function TourismPage() {
             right: 120,
             width: 280,
             height: 280,
-            background: 'radial-gradient(circle, rgba(251, 113, 133, 0.38) 0%, transparent 70%)',
+            background: isHeritage
+              ? 'radial-gradient(circle, rgba(251, 113, 133, 0.38) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(52, 211, 153, 0.38) 0%, transparent 70%)',
             filter: 'blur(40px)',
             pointerEvents: 'none',
           }}
@@ -669,7 +839,9 @@ export function TourismPage() {
             left: 180,
             width: 240,
             height: 240,
-            background: 'radial-gradient(circle, rgba(244, 63, 94, 0.25) 0%, transparent 70%)',
+            background: isHeritage
+              ? 'radial-gradient(circle, rgba(244, 63, 94, 0.25) 0%, transparent 70%)'
+              : 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
             filter: 'blur(45px)',
             pointerEvents: 'none',
           }}
@@ -678,28 +850,60 @@ export function TourismPage() {
         <div className="bus-hero-content" style={{ position: 'relative', zIndex: 2 }}>
           <div className="bus-hero-eyebrow">
             <span className="badge-pill-light" style={{ backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(255, 255, 255, 0.2)' }}>
-              <Landmark size={14} /> OpenCity Tourism & Heritage
+              {isHeritage ? (
+                <>
+                  <Landmark size={14} /> OpenCity Di tích & Di sản Lịch sử
+                </>
+              ) : (
+                <>
+                  <Compass size={14} /> OpenCity Du lịch & Điểm đến Đô thị
+                </>
+              )}
             </span>
             <span className="badge-pill-light osm-badge" style={{ backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(254, 240, 138, 0.3)' }}>
-              <Compass size={14} /> Dữ liệu mở OpenStreetMap (ODbL)
+              {isHeritage ? (
+                <>
+                  <Building2 size={14} /> Số hóa 387 Di tích OpenStreetMap (ODbL)
+                </>
+              ) : (
+                <>
+                  <MapPin size={14} /> Dữ liệu mở OpenStreetMap (ODbL)
+                </>
+              )}
             </span>
           </div>
-          <h1>Bản đồ Du lịch & Di tích Lịch sử</h1>
+          <h1>
+            {isHeritage ? 'Bản đồ Di tích Lịch sử & Di sản Hà Nội' : 'Bản đồ Du lịch & Danh lam Thắng cảnh Hà Nội'}
+          </h1>
           <p>
-            Mạng lưới di sản văn hóa, bảo tàng, di tích lịch sử và danh lam thắng cảnh nghìn năm văn hiến của Thủ đô Hà Nội trên bản đồ 3D tương tác và dữ liệu cộng đồng mở.
+            {isHeritage
+              ? 'Hệ thống tra cứu số hóa 387 di tích lịch sử, bảo tàng, chùa cổ và không gian văn hiến ngàn năm của Thủ đô trên bản đồ 3D tương tác.'
+              : 'Khám phá các danh lam thắng cảnh, không gian văn hóa, phố đi bộ, điểm trải nghiệm và tuyến xe buýt kết nối của Thủ đô Hà Nội trên bản đồ 3D tương tác.'}
           </p>
         </div>
 
         <div className="bus-hero-actions" style={{ position: 'relative', zIndex: 2 }}>
-          <button
-            type="button"
-            className="btn btn-outline-white"
-            onClick={() => setIsOsmModalOpen(true)}
-            title="Dữ liệu di tích OpenStreetMap"
-            style={{ backdropFilter: 'blur(8px)', boxShadow: '0 0 14px rgba(255, 255, 255, 0.14)' }}
-          >
-            <Database size={16} /> Dữ liệu OpenStreetMap
-          </button>
+          {operator && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleOpenCreate}
+              style={{
+                background: isHeritage ? '#be123c' : '#047857',
+                borderColor: isHeritage ? '#fb7185' : '#34d399',
+                color: '#ffffff',
+                boxShadow: isHeritage
+                  ? '0 4px 18px rgba(190, 18, 60, 0.45), 0 0 20px rgba(251, 113, 133, 0.35)'
+                  : '0 4px 18px rgba(4, 120, 87, 0.45), 0 0 20px rgba(52, 211, 153, 0.35)',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Plus size={16} /> {isHeritage ? 'Thêm điểm di tích' : 'Thêm điểm du lịch'}
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-primary-contrast"
@@ -712,6 +916,25 @@ export function TourismPage() {
         </div>
       </div>
 
+      {toast && (
+        <div className={`custom-toast custom-toast-${toast.type}`}>
+          <div className="custom-toast-icon">
+            {toast.type === 'success' && <CheckCircle2 size={18} />}
+            {toast.type === 'error' && <AlertCircle size={18} />}
+            {toast.type === 'info' && <Compass size={18} />}
+          </div>
+          <span className="custom-toast-msg">{toast.message}</span>
+          <button
+            type="button"
+            className="custom-toast-close"
+            onClick={() => setToast(null)}
+            aria-label="Đóng"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Main Container */}
       <div className="bus-container page-width">
         {/* Nav Tabs */}
@@ -722,161 +945,54 @@ export function TourismPage() {
             alignItems: 'center',
             gap: '4px',
             overflowX: 'auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            paddingRight: '24px',
+            paddingBottom: '4px',
+            paddingRight: '36px',
           }}
         >
-          <button
-            type="button"
-            className={`bus-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setTab('all')}
-            style={{
-              padding: '9px 13px',
-              fontSize: '13.5px',
-              gap: '6px',
-              ...(activeTab === 'all'
-                ? { color: '#0f172a', borderBottomColor: '#0f172a', fontWeight: 800, textShadow: '0 0 10px rgba(15, 23, 42, 0.2)' }
-                : {}),
-            }}
-          >
-            <Compass size={15} /> Tất cả
-            <span
-              className="bus-tab-badge"
-              style={
-                activeTab === 'all'
-                  ? { background: '#f1f5f9', color: '#0f172a', boxShadow: '0 0 8px rgba(15, 23, 42, 0.25)' }
-                  : {}
-              }
-            >
-              {categoryCounts.all}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`bus-tab-btn ${activeTab === 'monument' ? 'active' : ''}`}
-            onClick={() => setTab('monument')}
-            style={{
-              padding: '9px 13px',
-              fontSize: '13.5px',
-              gap: '6px',
-              ...(activeTab === 'monument'
-                ? { color: '#be123c', borderBottomColor: '#be123c', fontWeight: 800, textShadow: '0 0 12px rgba(190, 18, 60, 0.35)' }
-                : {}),
-            }}
-          >
-            <Landmark size={15} /> Di tích Lịch sử
-            <span
-              className="bus-tab-badge"
-              style={
-                activeTab === 'monument'
-                  ? { background: '#fff1f2', color: '#be123c', boxShadow: '0 0 10px rgba(190, 18, 60, 0.4)' }
-                  : {}
-              }
-            >
-              {categoryCounts.monument}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`bus-tab-btn ${activeTab === 'museum' ? 'active' : ''}`}
-            onClick={() => setTab('museum')}
-            style={{
-              padding: '9px 13px',
-              fontSize: '13.5px',
-              gap: '6px',
-              ...(activeTab === 'museum'
-                ? { color: '#3730a3', borderBottomColor: '#3730a3', fontWeight: 800, textShadow: '0 0 12px rgba(55, 48, 163, 0.35)' }
-                : {}),
-            }}
-          >
-            <Building2 size={15} /> Bảo tàng
-            <span
-              className="bus-tab-badge"
-              style={
-                activeTab === 'museum'
-                  ? { background: '#eef2ff', color: '#3730a3', boxShadow: '0 0 10px rgba(55, 48, 163, 0.4)' }
-                  : {}
-              }
-            >
-              {categoryCounts.museum}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`bus-tab-btn ${activeTab === 'religious' ? 'active' : ''}`}
-            onClick={() => setTab('religious')}
-            style={{
-              padding: '9px 13px',
-              fontSize: '13.5px',
-              gap: '6px',
-              ...(activeTab === 'religious'
-                ? { color: '#b45309', borderBottomColor: '#b45309', fontWeight: 800, textShadow: '0 0 12px rgba(180, 83, 9, 0.35)' }
-                : {}),
-            }}
-          >
-            <Sparkles size={15} /> Chùa & Đền cổ
-            <span
-              className="bus-tab-badge"
-              style={
-                activeTab === 'religious'
-                  ? { background: '#fffbeb', color: '#b45309', boxShadow: '0 0 10px rgba(180, 83, 9, 0.4)' }
-                  : {}
-              }
-            >
-              {categoryCounts.religious}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`bus-tab-btn ${activeTab === 'cultural' ? 'active' : ''}`}
-            onClick={() => setTab('cultural')}
-            style={{
-              padding: '9px 13px',
-              fontSize: '13.5px',
-              gap: '6px',
-              ...(activeTab === 'cultural'
-                ? { color: '#6d28d9', borderBottomColor: '#6d28d9', fontWeight: 800, textShadow: '0 0 12px rgba(109, 40, 217, 0.35)' }
-                : {}),
-            }}
-          >
-            <Layers size={15} /> Không gian Văn hóa
-            <span
-              className="bus-tab-badge"
-              style={
-                activeTab === 'cultural'
-                  ? { background: '#f5f3ff', color: '#6d28d9', boxShadow: '0 0 10px rgba(109, 40, 217, 0.4)' }
-                  : {}
-              }
-            >
-              {categoryCounts.cultural}
-            </span>
-          </button>
-          <button
-            type="button"
-            className={`bus-tab-btn ${activeTab === 'landscape' ? 'active' : ''}`}
-            onClick={() => setTab('landscape')}
-            style={{
-              padding: '9px 13px',
-              fontSize: '13.5px',
-              gap: '6px',
-              ...(activeTab === 'landscape'
-                ? { color: '#047857', borderBottomColor: '#047857', fontWeight: 800, textShadow: '0 0 12px rgba(4, 120, 87, 0.35)' }
-                : {}),
-            }}
-          >
-            <Compass size={15} /> Danh lam Thắng cảnh
-            <span
-              className="bus-tab-badge"
-              style={
-                activeTab === 'landscape'
-                  ? { background: '#ecfdf5', color: '#047857', boxShadow: '0 0 10px rgba(4, 120, 87, 0.4)' }
-                  : {}
-              }
-            >
-              {categoryCounts.landscape}
-            </span>
-          </button>
+          {currentTabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            const Icon = tab.icon;
+            const count = categoryCounts[tab.key] ?? (tab.key === 'all' ? destinations.length : 0);
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                className={`bus-tab-btn ${isActive ? 'active' : ''}`}
+                onClick={() => setTab(tab.key)}
+                style={{
+                  padding: '7px 11px',
+                  fontSize: '13px',
+                  gap: '5px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  ...(isActive
+                    ? {
+                      color: tab.color,
+                      borderBottomColor: tab.color,
+                      fontWeight: 750,
+                      textShadow: `0 0 10px ${tab.color}33`,
+                    }
+                    : {}),
+                }}
+              >
+                <Icon size={14} /> {tab.label}
+                <span
+                  className="bus-tab-badge"
+                  style={
+                    isActive
+                      ? {
+                        background: tab.bg,
+                        color: tab.color,
+                        boxShadow: `0 0 8px ${tab.color}44`,
+                      }
+                      : {}
+                  }
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="bus-layout-grid">
@@ -884,8 +1000,10 @@ export function TourismPage() {
             <div
               className="bus-filter-box"
               style={{
-                boxShadow: '0 4px 20px -4px rgba(15, 23, 42, 0.06), 0 0 16px rgba(190, 18, 60, 0.06)',
-                border: '1px solid #fee2e2',
+                boxShadow: isHeritage
+                  ? '0 4px 20px -4px rgba(15, 23, 42, 0.06), 0 0 16px rgba(190, 18, 60, 0.06)'
+                  : '0 4px 20px -4px rgba(15, 23, 42, 0.06), 0 0 16px rgba(4, 120, 87, 0.06)',
+                border: isHeritage ? '1px solid #fee2e2' : '1px solid #d1fae5',
               }}
             >
               <div className="bus-search-input-wrapper">
@@ -893,7 +1011,11 @@ export function TourismPage() {
                 <input
                   type="text"
                   className="bus-search-input"
-                  placeholder="Tìm theo tên di tích, địa chỉ (Lăng Bác, Hoàng Thành, Văn Miếu...)"
+                  placeholder={
+                    isHeritage
+                      ? 'Tìm kiếm di tích, đình, đền, chùa cổ, bảo tàng (Hoàng Thành, Văn Miếu, Lăng Bác...)'
+                      : 'Tìm điểm du lịch, danh lam, phố đi bộ, ẩm thực (Hồ Gươm, Phố Cổ, Hồ Tây...)'
+                  }
                   value={query}
                   onChange={(e) => {
                     setQuery(e.target.value);
@@ -917,7 +1039,7 @@ export function TourismPage() {
               {districts.length > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 2 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
-                    <MapPin size={15} style={{ color: '#be123c', flexShrink: 0 }} />
+                    <MapPin size={15} style={{ color: isHeritage ? '#be123c' : '#047857', flexShrink: 0 }} />
                     <span>Khu vực:</span>
                   </div>
                   <select
@@ -950,30 +1072,37 @@ export function TourismPage() {
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingTop: 2 }}>
                 <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>Gợi ý:</span>
-                {['Lăng Bác', 'Văn Miếu', 'Hoàng Thành', 'Tháp Rùa', 'Chùa Một Cột', 'Cầu Thê Húc'].map((kw) => (
-                  <button
-                    key={kw}
-                    type="button"
-                    style={{
-                      fontSize: 12,
-                      padding: '4px 10px',
-                      background: query === kw ? '#be123c' : 'var(--color-bg-main)',
-                      color: query === kw ? '#ffffff' : 'var(--color-text-secondary)',
-                      border: '1px solid ' + (query === kw ? '#be123c' : 'var(--color-border)'),
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      fontWeight: 650,
-                      boxShadow: query === kw ? '0 2px 10px rgba(190, 18, 60, 0.4), 0 0 8px rgba(190, 18, 60, 0.25)' : 'none',
-                      transition: 'all 0.15s ease',
-                    }}
-                    onClick={() => {
-                      setQuery(query === kw ? '' : kw);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {kw}
-                  </button>
-                ))}
+                {(isHeritage
+                  ? ['Hoàng Thành', 'Văn Miếu', 'Lăng Bác', 'Chùa Một Cột', 'Cầu Thê Húc', 'Đền Quán Thánh']
+                  : ['Hồ Gươm', 'Phố Cổ', 'Hồ Tây', 'Nhà Hát Lớn', 'Chợ Đồng Xuân', 'Phố Đi Bộ']
+                ).map((kw) => {
+                  const activeColor = isHeritage ? '#be123c' : '#047857';
+                  const isKwActive = query === kw;
+                  return (
+                    <button
+                      key={kw}
+                      type="button"
+                      style={{
+                        fontSize: 12,
+                        padding: '4px 10px',
+                        background: isKwActive ? activeColor : 'var(--color-bg-main)',
+                        color: isKwActive ? '#ffffff' : 'var(--color-text-secondary)',
+                        border: '1px solid ' + (isKwActive ? activeColor : 'var(--color-border)'),
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        fontWeight: 650,
+                        boxShadow: isKwActive ? `0 2px 10px ${isHeritage ? 'rgba(190, 18, 60, 0.4)' : 'rgba(4, 120, 87, 0.4)'}` : 'none',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onClick={() => {
+                        setQuery(query === kw ? '' : kw);
+                        setCurrentPage(1);
+                      }}
+                    >
+                      {kw}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -987,11 +1116,11 @@ export function TourismPage() {
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '40px 16px', color: '#64748b' }}>
                   <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
-                  <div style={{ fontSize: 13 }}>Đang tải danh bạ di tích từ dữ liệu OpenStreetMap...</div>
+                  <div style={{ fontSize: 13 }}>Đang tải danh bạ {isHeritage ? 'di tích' : 'điểm du lịch'} từ dữ liệu OpenStreetMap...</div>
                 </div>
               ) : destinations.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '36px 16px', color: '#64748b', fontSize: 13 }}>
-                  Không tìm thấy địa điểm di tích nào phù hợp với từ khóa &quot;{query}&quot;.
+                  Không tìm thấy {isHeritage ? 'địa điểm di tích' : 'điểm đến du lịch'} nào phù hợp với từ khóa &quot;{query}&quot;.
                 </div>
               ) : (
                 paginatedDestinations.map((item) => {
@@ -1029,6 +1158,26 @@ export function TourismPage() {
                             <Navigation size={11} />
                             <span>{item.distance_km} km</span>
                           </span>
+                        )}
+                        {operator && (
+                          <div style={{ display: 'flex', gap: 4, marginLeft: 8 }} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              title="Sửa thông tin di tích"
+                              style={{ padding: '3px 6px', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 4, cursor: 'pointer', color: '#0369a1', display: 'flex', alignItems: 'center' }}
+                              onClick={(e) => handleOpenEdit(item, e)}
+                            >
+                              <Pencil size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              title="Xóa di tích khỏi hệ thống"
+                              style={{ padding: '3px 6px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 4, cursor: 'pointer', color: '#be123c', display: 'flex', alignItems: 'center' }}
+                              onClick={(e) => handleDelete(item, e)}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         )}
                       </div>
 
@@ -1129,7 +1278,7 @@ export function TourismPage() {
           >
             <div className="map-view-header">
               <div className="map-title-badge">
-                <Compass size={14} /> Bản đồ không gian 3D • MapLibre GL
+                <Compass size={14} /> Bản đồ không gian 3D
               </div>
               {selectedDestination ? (
                 <div className="map-route-indicator" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1240,6 +1389,25 @@ export function TourismPage() {
                     <X size={15} />
                   </button>
 
+                  {operator && (
+                    <div style={{ position: 'absolute', right: 48, top: 12, display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        style={{ padding: '3px 8px', fontSize: 12, background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, cursor: 'pointer', color: '#0369a1', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                        onClick={() => handleOpenEdit(selectedDestination)}
+                      >
+                        <Pencil size={12} /> Sửa
+                      </button>
+                      <button
+                        type="button"
+                        style={{ padding: '3px 8px', fontSize: 12, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer', color: '#be123c', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                        onClick={() => handleDelete(selectedDestination)}
+                      >
+                        <Trash2 size={12} /> Xóa
+                      </button>
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <span
                       style={{
@@ -1324,74 +1492,266 @@ export function TourismPage() {
 
             <div className="map-footer-attribution">
               <span>© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> (ODbL)</span>
-              <span>• MapLibre GL 3D • OpenFreeMap Tiles • {destinations.length} di tích</span>
+              <span>• Không gian 3D • {destinations.length} địa điểm</span>
             </div>
           </div>
         </div>
       </div>
 
-      {isOsmModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsOsmModalOpen(false)}>
-          <div className="bus-import-modal" onClick={(e) => e.stopPropagation()}>
+      {/* Admin Create / Edit Modal */}
+      {isFormOpen && (
+        <div className="modal-backdrop" onClick={() => !formBusy && setIsFormOpen(false)}>
+          <div
+            className="modal-card bus-import-modal"
+            style={{ maxWidth: 640, maxHeight: '90vh', overflowY: 'auto' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h3>
-                <Database size={18} /> Dữ liệu Di tích & Du lịch OpenStreetMap
+                {isHeritage ? (
+                  <Landmark size={20} style={{ color: '#be123c' }} />
+                ) : (
+                  <Compass size={20} style={{ color: '#047857' }} />
+                )}
+                <span>
+                  {editingItem
+                    ? `Chỉnh sửa: ${editingItem.name}`
+                    : isHeritage
+                      ? 'Thêm điểm di tích mới'
+                      : 'Thêm điểm du lịch mới'}
+                </span>
               </h3>
               <button
                 type="button"
                 className="btn-close-modal"
-                onClick={() => setIsOsmModalOpen(false)}
+                onClick={() => !formBusy && setIsFormOpen(false)}
               >
                 ✕
               </button>
             </div>
 
-            <div className="modal-desc">
-              Hệ thống OpenCity khai thác trực tiếp cơ sở dữ liệu mở OpenStreetMap (OSM) cho mạng lưới di sản và điểm tham quan đô thị.
-            </div>
+            {formError && (
+              <div style={{ padding: '10px 14px', background: '#fee2e2', color: '#be123c', borderRadius: 10, fontSize: 13, marginBottom: 14, border: '1px solid #fecdd3' }}>
+                {formError}
+              </div>
+            )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-              <div style={{ background: '#f8fafc', padding: 14, borderRadius: 12, border: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#0369a1', marginBottom: 4 }}>CÁC THẺ OSM ĐƯỢC ÁNH XẠ:</div>
-                <code style={{ fontSize: 12, color: '#334155', display: 'block', lineHeight: 1.6 }}>
-                  tourism = attraction | museum | viewpoint | gallery | artwork<br />
-                  historic = monument | memorial | castle | archaeological_site | ruins | heritage | city_gate | building<br />
-                  amenity = place_of_worship [historic]
-                </code>
+            <form onSubmit={handleSaveForm} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="form-group">
+                <label className="form-label">
+                  Tên điểm {isHeritage ? 'di tích' : 'du lịch'} / Danh thắng <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Ví dụ: Hoàng Thành Thăng Long, Chùa Trấn Quốc..."
+                />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-                <div style={{ background: '#f1f5f9', padding: '10px 12px', borderRadius: 10, textAlign: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Tổng địa điểm</span>
-                  <strong style={{ fontSize: 18, color: '#0f172a' }}>{categoryCounts.all}</strong>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group">
+                  <label className="form-label">
+                    Phân loại danh mục <span className="required">*</span>
+                  </label>
+                  <select
+                    className="form-input"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  >
+                    <option value="monument">Di tích lịch sử</option>
+                    <option value="museum">Bảo tàng</option>
+                    <option value="religious">Chùa & Đền cổ</option>
+                    <option value="cultural">Không gian văn hóa</option>
+                    <option value="landscape">Danh lam thắng cảnh</option>
+                  </select>
                 </div>
-                <div style={{ background: '#f1f5f9', padding: '10px 12px', borderRadius: 10, textAlign: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Hệ tọa độ</span>
-                  <strong style={{ fontSize: 14, color: '#0f172a', lineHeight: '24px' }}>WGS84</strong>
-                </div>
-                <div style={{ background: '#f1f5f9', padding: '10px 12px', borderRadius: 10, textAlign: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>Giấy phép</span>
-                  <strong style={{ fontSize: 14, color: '#16a34a', lineHeight: '24px' }}>ODbL</strong>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    Quận / Huyện <span className="required">*</span>
+                  </label>
+                  <select
+                    className="form-input"
+                    value={formData.district || 'Hoàn Kiếm'}
+                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                  >
+                    {districts.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            </div>
 
-            <div className="modal-footer">
-              <a
-                href="https://www.openstreetmap.org"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-outline"
-                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-              >
-                <ExternalLink size={14} /> Khám phá OpenStreetMap.org
-              </a>
+              <div className="form-group">
+                <label className="form-label">Địa chỉ chi tiết</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={formData.address || ''}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Ví dụ: 19C Hoàng Diệu, Quán Thánh, Ba Đình, Hà Nội"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group">
+                  <label className="form-label">
+                    Vĩ độ (Latitude) <span className="required">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    required
+                    className="form-input"
+                    value={formData.latitude}
+                    onChange={(e) => setFormData({ ...formData, latitude: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Kinh độ (Longitude) <span className="required">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    required
+                    className="form-input"
+                    value={formData.longitude}
+                    onChange={(e) => setFormData({ ...formData, longitude: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group">
+                  <label className="form-label">Giờ mở cửa</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.opening_hours || ''}
+                    onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
+                    placeholder="8:00 - 17:00"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Giá vé / Phí vào cổng</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formData.admission_fee || ''}
+                    onChange={(e) => setFormData({ ...formData, admission_fee: e.target.value })}
+                    placeholder="Miễn phí / 30.000 VNĐ"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Cấp xếp hạng di sản</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={formData.heritage_level || ''}
+                  onChange={(e) => setFormData({ ...formData, heritage_level: e.target.value })}
+                  placeholder="Di tích Quốc gia đặc biệt / Di sản UNESCO / Di tích cấp Thành phố"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Mô tả / Lịch sử di tích</label>
+                <textarea
+                  rows={3}
+                  className="form-input"
+                  value={formData.description || ''}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Giới thiệu sơ lược lịch sử, niên đại xây dựng, giá trị văn hóa..."
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="form-group-checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.audio_guide}
+                      onChange={(e) => setFormData({ ...formData, audio_guide: e.target.checked })}
+                    />
+                    <span>Có thuyết minh số (Audio Guide)</span>
+                  </label>
+                </div>
+                <div className="form-group-checkbox">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={formData.active}
+                      onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                    />
+                    <span>Hiển thị trên bản đồ 3D</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={formBusy}
+                  onClick={() => setIsFormOpen(false)}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={formBusy}
+                  style={{
+                    background: isHeritage ? '#be123c' : '#047857',
+                    borderColor: isHeritage ? '#be123c' : '#047857',
+                  }}
+                >
+                  {formBusy
+                    ? 'Đang lưu...'
+                    : editingItem
+                      ? 'Cập nhật thay đổi'
+                      : isHeritage
+                        ? 'Thêm di tích mới'
+                        : 'Thêm điểm du lịch'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {deleteConfirmItem && (
+        <div className="modal-backdrop" onClick={() => !isDeleting && setDeleteConfirmItem(null)}>
+          <div className="modal-card delete-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="delete-confirm-icon-wrap">
+              <Trash2 size={26} />
+            </div>
+            <h3 className="delete-confirm-title">
+              {isHeritage ? 'Xác nhận xóa di tích' : 'Xác nhận xóa điểm du lịch'}
+            </h3>
+            <p className="delete-confirm-desc">
+              Bạn có chắc chắn muốn xóa <strong>"{deleteConfirmItem.name}"</strong> khỏi hệ thống? Thao tác này sẽ xóa vĩnh viễn và không thể hoàn tác.
+            </p>
+            <div className="delete-confirm-actions">
               <button
                 type="button"
-                className="btn btn-primary"
-                onClick={() => setIsOsmModalOpen(false)}
+                className="btn btn-outline"
+                onClick={() => setDeleteConfirmItem(null)}
+                disabled={isDeleting}
               >
-                Đã hiểu
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger-solid"
+                onClick={executeDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xác nhận xóa'}
               </button>
             </div>
           </div>

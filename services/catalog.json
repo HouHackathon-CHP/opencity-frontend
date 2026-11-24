@@ -69,8 +69,8 @@
 
     { "id": "land-use", "category": "planning", "name": "Quy hoạch sử dụng đất", "description": "Tra cứu lớp dữ liệu quy hoạch được công bố.", "icon": "MapPinned", "kind": "connector", "status": "needs-integration" },
 
-    { "id": "tourism-map", "category": "tourism", "name": "Bản đồ du lịch", "description": "Khám phá điểm đến và hành trình.", "icon": "Map", "kind": "connector", "status": "needs-integration" },
-    { "id": "heritage-map", "category": "tourism", "name": "Bản đồ di tích", "description": "Tra cứu di tích lịch sử, văn hóa.", "icon": "Castle", "kind": "connector", "status": "needs-integration" },
+    { "id": "tourism-map", "category": "tourism", "name": "Bản đồ du lịch", "description": "Khám phá danh lam thắng cảnh, điểm đến văn hóa và hành trình trên bản đồ 3D tương tác.", "icon": "Compass", "kind": "native", "status": "available", "route": "/tourism" },
+    { "id": "heritage-map", "category": "tourism", "name": "Bản đồ di tích", "description": "Tra cứu số hóa 387 di tích lịch sử, bảo tàng, chùa cổ nghìn năm văn hiến trên bản đồ 3D.", "icon": "Castle", "kind": "native", "status": "available", "route": "/heritage" },
     { "id": "tourism-app", "category": "tourism", "name": "Ứng dụng du lịch", "description": "Điểm truy cập hệ sinh thái du lịch.", "icon": "Compass", "kind": "link", "status": "needs-integration" },
 
     { "id": "ocop-map", "category": "agriculture", "name": "Bản đồ OCOP", "description": "Khám phá sản phẩm OCOP theo địa bàn.", "icon": "MapPin", "kind": "connector", "status": "needs-integration" },

@@ -19,6 +19,7 @@ const modules = [
   { title: 'Nhóm cộng đồng', href: '/community/groups', description: 'Tạo không gian trao đổi cho cư dân.' },
   { title: 'Góp ý, phản biện xã hội', href: '/social-feedback', description: 'Mở chủ đề lấy ý kiến và theo dõi phản hồi.' },
   { title: 'Xã/phường số', href: '/digital-wards', description: 'Cập nhật điểm phục vụ và thông tin cấp cơ sở.' },
+  { title: 'Bản đồ du lịch & di tích', href: '/tourism', description: 'Quản lý, thêm, sửa, xóa các điểm di tích và du lịch.' },
 ];
 
 const identity = new URL(authority);
