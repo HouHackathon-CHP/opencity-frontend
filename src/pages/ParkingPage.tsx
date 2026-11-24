@@ -29,6 +29,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
+import { apiBase } from '../lib/auth';
 import { canManage } from '../lib/permissions';
 import { Pagination } from '../components/Pagination';
 import {
@@ -565,18 +566,20 @@ export function ParkingPage() {
       setup3DBuildings(map);
 
       // 2. Add real OSM parking polygon footprints from backend API
+      const footprintsUrl = `${apiBase.replace(/\/$/, '')}/api/opencity/parking/footprints`;
       map.addSource('parking-footprints', {
         type: 'geojson',
-        data: '/api/opencity/parking/footprints',
+        data: footprintsUrl,
       });
 
       // 3. Footprint polygon fill (rendered on the ground BEFORE 3d-buildings)
+      const beforeBuildings = map.getLayer('3d-buildings') ? '3d-buildings' : undefined;
       map.addLayer(
         {
           id: 'parking-footprint-fill',
           type: 'fill',
           source: 'parking-footprints',
-          minzoom: 13.5,
+          minzoom: 12.5,
           paint: {
             'fill-color': [
               'match',
@@ -588,13 +591,13 @@ export function ParkingPage() {
               'interpolate',
               ['linear'],
               ['zoom'],
-              13.5, 0.25,
+              12.5, 0.25,
               15.5, 0.45,
               18, 0.65,
             ],
           },
         },
-        '3d-buildings'
+        beforeBuildings
       );
 
       // 4. Footprint polygon dashed boundary line (rendered on ground BEFORE 3d-buildings)
@@ -603,7 +606,7 @@ export function ParkingPage() {
           id: 'parking-footprint-line',
           type: 'line',
           source: 'parking-footprints',
-          minzoom: 13.5,
+          minzoom: 12.5,
           paint: {
             'line-color': [
               'match',
@@ -615,14 +618,14 @@ export function ParkingPage() {
               'interpolate',
               ['linear'],
               ['zoom'],
-              13.5, 1.2,
+              12.5, 1.2,
               16, 2.5,
               18, 3.8,
             ],
             'line-dasharray': [2, 1],
           },
         },
-        '3d-buildings'
+        beforeBuildings
       );
 
       // Selected footprint highlight
@@ -1024,6 +1027,8 @@ export function ParkingPage() {
             overflowX: 'auto',
             paddingBottom: '4px',
             paddingRight: '36px',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
           }}
         >
           {parkingTabs.map((tab) => {
@@ -1110,7 +1115,7 @@ export function ParkingPage() {
               </div>
 
               {/* Filters Row: District & Parking Type */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className="form-grid-2col" style={{ gap: 8, marginBottom: 8 }}>
                 {districts.length > 0 && (
                   <div>
                     <select
@@ -1562,13 +1567,15 @@ export function ParkingPage() {
                   className="floating-stop-detail"
                   style={{
                     position: 'absolute',
-                    bottom: 24,
-                    left: 20,
-                    right: 20,
+                    bottom: 16,
+                    left: 12,
+                    right: 12,
                     maxWidth: 440,
+                    maxHeight: 'calc(100% - 64px)',
+                    overflowY: 'auto',
                     background: 'var(--color-bg-surface, #ffffff)',
                     borderRadius: 16,
-                    padding: '16px',
+                    padding: '14px 16px',
                     boxShadow: '0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08)',
                     border: '1px solid var(--color-border, #e2e8f0)',
                     zIndex: 10,
@@ -1619,7 +1626,7 @@ export function ParkingPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12, fontSize: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 8, marginTop: 12, fontSize: 12 }}>
                     <div style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: 8 }}>
                       <span style={{ color: '#64748b' }}>Hình thức: </span>
                       <strong style={{ color: '#0f172a' }}>{PARKING_TYPE_LABELS[selectedParking.parking_type] || selectedParking.parking_type}</strong>
@@ -1713,7 +1720,7 @@ export function ParkingPage() {
                 />
               </div>
 
-              <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div className="form-grid-2col" style={{ marginBottom: 12 }}>
                 <div className="form-group">
                   <label className="form-label">Loại bãi đỗ</label>
                   <select
@@ -1756,7 +1763,7 @@ export function ParkingPage() {
                 />
               </div>
 
-              <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div className="form-grid-2col" style={{ marginBottom: 12 }}>
                 <div className="form-group">
                   <label className="form-label">Quận / Huyện *</label>
                   <input
@@ -1781,7 +1788,7 @@ export function ParkingPage() {
                 </div>
               </div>
 
-              <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div className="form-grid-2col" style={{ marginBottom: 12 }}>
                 <div className="form-group">
                   <label className="form-label">Vĩ độ (Latitude) *</label>
                   <input
@@ -1807,7 +1814,7 @@ export function ParkingPage() {
                 </div>
               </div>
 
-              <div className="form-grid-2col" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+              <div className="form-grid-2col" style={{ marginBottom: 12 }}>
                 <div className="form-group">
                   <label className="form-label">Biểu phí</label>
                   <select
