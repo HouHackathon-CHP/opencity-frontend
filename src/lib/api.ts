@@ -171,7 +171,16 @@ export async function request<T>(path: string, token: string, init: RequestInit 
     let detail = `Yêu cầu thất bại (${response.status})`;
     try {
       const body = await response.json();
-      detail = typeof body.detail === 'string' ? body.detail : detail;
+      if (typeof body.detail === 'string') {
+        detail = body.detail;
+      } else if (Array.isArray(body.detail)) {
+        detail = body.detail
+          .map((err: any) => {
+            const field = err.loc ? err.loc[err.loc.length - 1] : '';
+            return field ? `Trường "${field}": ${err.msg}` : err.msg;
+          })
+          .join(', ');
+      }
     } catch {}
     if (response.status === 401 || detail === 'Bearer token required') {
       detail = 'Vui lòng đăng nhập tài khoản cán bộ để thực hiện thao tác này.';
@@ -521,5 +530,141 @@ export async function deleteTourismDestination(token: string, id: string): Promi
     method: 'DELETE',
   });
 }
+
+export type FacilitySummary = {
+  id: string;
+  name: string;
+  category: string;
+  facility_type: 'healthcare' | 'education';
+  address: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  operator_type: string;
+  opening_hours: string;
+  phone?: string | null;
+  emergency_phone?: string | null;
+  level?: string | null;
+  distance_km?: number | null;
+  tags?: string[];
+};
+
+export type FacilityDetail = {
+  id: string;
+  name: string;
+  category: string;
+  facility_type: 'healthcare' | 'education';
+  address: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  operator_type: string;
+  opening_hours: string;
+  phone?: string | null;
+  emergency_phone?: string | null;
+  level?: string | null;
+  description: string;
+  website?: string | null;
+  connecting_bus_routes?: string[];
+  tags?: string[];
+  distance_km?: number | null;
+  active?: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type FacilityCategorySummary = {
+  key: string;
+  label: string;
+  count: number;
+  icon: string;
+  facility_type: string;
+};
+
+export type FacilityInput = {
+  name: string;
+  category: string;
+  facility_type: 'healthcare' | 'education';
+  address: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  operator_type?: string;
+  opening_hours?: string;
+  phone?: string | null;
+  emergency_phone?: string | null;
+  level?: string | null;
+  description?: string;
+  website?: string | null;
+  connecting_bus_routes?: string[];
+  tags?: string[];
+  active?: boolean;
+};
+
+export async function listFacilities(
+  token: string,
+  params: {
+    keyword?: string;
+    category?: string;
+    facility_type?: string;
+    district?: string;
+    lat?: number;
+    lon?: number;
+    radius_km?: number;
+    emergency_only?: boolean;
+  } = {}
+): Promise<FacilitySummary[]> {
+  const q = new URLSearchParams();
+  if (params.keyword) q.set('keyword', params.keyword);
+  if (params.category && params.category !== 'all') q.set('category', params.category);
+  if (params.facility_type && params.facility_type !== 'all') q.set('facility_type', params.facility_type);
+  if (params.district && params.district !== 'all') q.set('district', params.district);
+  if (params.lat !== undefined) q.set('lat', params.lat.toString());
+  if (params.lon !== undefined) q.set('lon', params.lon.toString());
+  if (params.radius_km !== undefined) q.set('radius_km', params.radius_km.toString());
+  if (params.emergency_only) q.set('emergency_only', 'true');
+  const qs = q.toString();
+  return request<FacilitySummary[]>(`/api/opencity/facilities${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function getFacilityDetail(id: string, token: string, lat?: number, lon?: number): Promise<FacilityDetail> {
+  const q = new URLSearchParams();
+  if (lat !== undefined) q.set('lat', lat.toString());
+  if (lon !== undefined) q.set('lon', lon.toString());
+  const qs = q.toString();
+  return request<FacilityDetail>(`/api/opencity/facilities/${id}${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function getFacilityCategories(token: string): Promise<FacilityCategorySummary[]> {
+  return request<FacilityCategorySummary[]>('/api/opencity/facilities/categories', token);
+}
+
+export async function getFacilityDistricts(token: string, facilityType?: string): Promise<string[]> {
+  const qs = facilityType ? `?facility_type=${facilityType}` : '';
+  return request<string[]>(`/api/opencity/facilities/districts${qs}`, token);
+}
+
+export async function createFacility(token: string, body: FacilityInput): Promise<FacilityDetail> {
+  return request<FacilityDetail>('/api/opencity/facilities', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateFacility(token: string, id: string, body: FacilityInput): Promise<FacilityDetail> {
+  return request<FacilityDetail>(`/api/opencity/facilities/${id}`, token, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteFacility(token: string, id: string): Promise<{ message: string; id: string }> {
+  return request<{ message: string; id: string }>(`/api/opencity/facilities/${id}`, token, {
+    method: 'DELETE',
+  });
+}
+
 
 

@@ -4,8 +4,6 @@ import {
   AlertCircle,
   Building2,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Compass,
   Crosshair,
   ExternalLink,
@@ -28,6 +26,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { canManage } from '../lib/permissions';
+import { Pagination } from '../components/Pagination';
 import {
   createTourismDestination,
   deleteTourismDestination,
@@ -1219,57 +1218,15 @@ export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritag
               )}
             </div>
 
-            {totalPages > 1 && (
-              <div className="bus-pagination-wrapper">
-                <div className="pagination-summary">
-                  Trang <strong>{currentPage}</strong> / <strong>{totalPages}</strong> (Hiển thị {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, destinations.length)} trong tổng số {destinations.length.toLocaleString('vi-VN')} địa điểm)
-                </div>
-
-                <div className="pagination-controls">
-                  <button
-                    type="button"
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(1)}
-                    disabled={currentPage <= 1}
-                    title="Về trang đầu tiên"
-                  >
-                    «
-                  </button>
-                  <button
-                    type="button"
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage <= 1}
-                    title="Trang trước"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-
-                  <span style={{ fontSize: 13, fontWeight: 700, padding: '0 8px', color: '#0f172a' }}>
-                    {currentPage} / {totalPages}
-                  </span>
-
-                  <button
-                    type="button"
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage >= totalPages}
-                    title="Trang sau"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    className="pagination-btn"
-                    onClick={() => handlePageChange(totalPages)}
-                    disabled={currentPage >= totalPages}
-                    title="Tới trang cuối cùng"
-                  >
-                    »
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={destinations.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              itemLabel="địa điểm"
+              onPageChange={handlePageChange}
+              accentColor={isHeritage ? '#be123c' : '#059669'}
+            />
           </div>
 
           <div

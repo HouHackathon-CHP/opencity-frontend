@@ -10,6 +10,8 @@ import {
   Compass,
   ExternalLink,
   Globe,
+  GraduationCap,
+  Hospital,
   Layers,
   LayoutGrid,
   Landmark,
@@ -74,6 +76,10 @@ export function Shell() {
     '/air-quality',
     '/bus-search',
     '/tourism',
+    '/heritage',
+    '/healthcare',
+    '/education',
+    '/facilities',
     '/hotlines',
     '/surveys',
     '/appointments',
@@ -88,6 +94,7 @@ export function Shell() {
     canSee('air_quality') ||
     canSee('bus_search') ||
     canSee('tourism') ||
+    canSee('facilities') ||
     canSee('hotlines') ||
     canSee('surveys') ||
     canSee('appointments') ||
@@ -232,6 +239,24 @@ export function Shell() {
                         >
                           <Landmark size={16} />
                           <span>Bản đồ Di tích</span>
+                        </NavLink>
+                      </>
+                    )}
+                    {canSee('facilities') && (
+                      <>
+                        <NavLink
+                          to="/healthcare"
+                          className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                        >
+                          <Hospital size={16} />
+                          <span>Cơ sở Y tế & Nhà thuốc</span>
+                        </NavLink>
+                        <NavLink
+                          to="/education"
+                          className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                        >
+                          <GraduationCap size={16} />
+                          <span>Trường học & Đại học</span>
                         </NavLink>
                       </>
                     )}
@@ -565,6 +590,18 @@ export function Shell() {
                     <NavLink to="/heritage" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
                       <Landmark size={18} style={{ color: '#e11d48' }} />
                       <span>Bản đồ Di tích</span>
+                    </NavLink>
+                  </>
+                )}
+                {canSee('facilities') && (
+                  <>
+                    <NavLink to="/healthcare" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                      <Hospital size={18} style={{ color: '#e11d48' }} />
+                      <span>Cơ sở Y tế & Nhà thuốc</span>
+                    </NavLink>
+                    <NavLink to="/education" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                      <GraduationCap size={18} style={{ color: '#4f46e5' }} />
+                      <span>Trường học & Đại học</span>
                     </NavLink>
                   </>
                 )}
