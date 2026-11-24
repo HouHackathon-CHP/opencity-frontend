@@ -970,7 +970,7 @@ export function EducationPage() {
               </div>
 
               {districts.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 2 }}>
+                <div className="filter-district-row">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
                     <MapPin size={15} style={{ color: '#4f46e5', flexShrink: 0 }} />
                     <span>Khu vực:</span>
@@ -1485,7 +1485,7 @@ export function EducationPage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Cấp bậc trường học</label>
                   <select
@@ -1529,7 +1529,7 @@ export function EducationPage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Quận / Huyện</label>
                   <input
@@ -1554,7 +1554,7 @@ export function EducationPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">
                     Vĩ độ (Latitude) <span className="required">*</span>
@@ -1584,7 +1584,7 @@ export function EducationPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Số điện thoại liên hệ</label>
                   <input

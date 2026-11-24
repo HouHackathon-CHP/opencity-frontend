@@ -1512,7 +1512,7 @@ export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritag
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">
                     Phân loại danh mục <span className="required">*</span>
@@ -1557,7 +1557,7 @@ export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritag
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">
                     Vĩ độ (Latitude) <span className="required">*</span>
@@ -1586,7 +1586,7 @@ export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritag
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Giờ mở cửa</label>
                   <input
@@ -1631,7 +1631,7 @@ export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritag
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-grid-2col">
                 <div className="form-group-checkbox">
                   <label>
                     <input

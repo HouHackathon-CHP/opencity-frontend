@@ -931,7 +931,6 @@ export function HealthcarePage() {
             className={`bus-tab-btn ${emergencyOnly ? 'active' : ''}`}
             onClick={toggleEmergencyFilter}
             style={{
-              marginLeft: 'auto',
               padding: '6px 12px',
               fontSize: '12.5px',
               fontWeight: 750,
@@ -988,7 +987,7 @@ export function HealthcarePage() {
               </div>
 
               {districts.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 2 }}>
+                <div className="filter-district-row">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 700, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>
                     <MapPin size={15} style={{ color: '#be123c', flexShrink: 0 }} />
                     <span>Khu vực:</span>
@@ -1527,7 +1526,7 @@ export function HealthcarePage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Loại cơ sở y tế</label>
                   <select
@@ -1569,7 +1568,7 @@ export function HealthcarePage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Quận / Huyện</label>
                   <input
@@ -1594,7 +1593,7 @@ export function HealthcarePage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">
                     Vĩ độ (Latitude) <span className="required">*</span>
@@ -1624,7 +1623,7 @@ export function HealthcarePage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="form-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Đường dây nóng cấp cứu (nếu có)</label>
                   <input
