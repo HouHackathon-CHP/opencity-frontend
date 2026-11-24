@@ -666,5 +666,145 @@ export async function deleteFacility(token: string, id: string): Promise<{ messa
   });
 }
 
+export type ParkingSummary = {
+  id: string;
+  name: string;
+  category: 'car_parking' | 'motorcycle_parking' | 'mixed_parking' | 'street_parking' | string;
+  parking_type: 'surface' | 'underground' | 'multi-storey' | 'street_side' | 'rooftop' | string;
+  address: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  fee: string;
+  fee_details?: string | null;
+  capacity?: number | null;
+  access: string;
+  supervised: boolean;
+  opening_hours: string;
+  operator?: string | null;
+  distance_km?: number | null;
+  tags?: string[];
+};
+
+export type ParkingDetail = {
+  id: string;
+  name: string;
+  category: string;
+  parking_type: string;
+  address: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  fee: string;
+  fee_details?: string | null;
+  capacity?: number | null;
+  access: string;
+  supervised: boolean;
+  opening_hours: string;
+  operator?: string | null;
+  description: string;
+  contact?: string | null;
+  distance_km?: number | null;
+  tags?: string[];
+  active?: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type ParkingCategorySummary = {
+  key: string;
+  label: string;
+  count: number;
+  icon: string;
+};
+
+export type ParkingInput = {
+  name: string;
+  category: string;
+  parking_type: string;
+  address: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  fee?: string;
+  fee_details?: string | null;
+  capacity?: number | null;
+  access?: string;
+  supervised?: boolean;
+  opening_hours?: string;
+  operator?: string | null;
+  description?: string;
+  contact?: string | null;
+  tags?: string[];
+  active?: boolean;
+};
+
+export async function listParking(
+  token: string,
+  params: {
+    keyword?: string;
+    category?: string;
+    parking_type?: string;
+    district?: string;
+    fee_type?: string;
+    is_24_7?: boolean;
+    lat?: number;
+    lon?: number;
+    radius_km?: number;
+  } = {}
+): Promise<ParkingSummary[]> {
+  const q = new URLSearchParams();
+  if (params.keyword) q.set('keyword', params.keyword);
+  if (params.category && params.category !== 'all') q.set('category', params.category);
+  if (params.parking_type && params.parking_type !== 'all') q.set('parking_type', params.parking_type);
+  if (params.district && params.district !== 'all') q.set('district', params.district);
+  if (params.fee_type && params.fee_type !== 'all') q.set('fee_type', params.fee_type);
+  if (params.is_24_7) q.set('is_24_7', 'true');
+  if (params.lat !== undefined) q.set('lat', params.lat.toString());
+  if (params.lon !== undefined) q.set('lon', params.lon.toString());
+  if (params.radius_km !== undefined) q.set('radius_km', params.radius_km.toString());
+  const qs = q.toString();
+  return request<ParkingSummary[]>(`/api/opencity/parking${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function getParkingDetail(id: string, token: string, lat?: number, lon?: number): Promise<ParkingDetail> {
+  const q = new URLSearchParams();
+  if (lat !== undefined) q.set('lat', lat.toString());
+  if (lon !== undefined) q.set('lon', lon.toString());
+  const qs = q.toString();
+  return request<ParkingDetail>(`/api/opencity/parking/${id}${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function getParkingCategories(token: string): Promise<ParkingCategorySummary[]> {
+  return request<ParkingCategorySummary[]>('/api/opencity/parking/categories', token);
+}
+
+export async function getParkingDistricts(token: string): Promise<string[]> {
+  return request<string[]>('/api/opencity/parking/districts', token);
+}
+
+export async function createParking(token: string, body: ParkingInput): Promise<ParkingDetail> {
+  return request<ParkingDetail>('/api/opencity/parking', token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateParking(token: string, id: string, body: ParkingInput): Promise<ParkingDetail> {
+  return request<ParkingDetail>(`/api/opencity/parking/${id}`, token, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteParking(token: string, id: string): Promise<{ message: string; id: string }> {
+  return request<{ message: string; id: string }>(`/api/opencity/parking/${id}`, token, {
+    method: 'DELETE',
+  });
+}
+
+
 
 

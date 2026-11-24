@@ -23,6 +23,7 @@ import {
   PhoneCall,
   Shield,
   ShieldCheck,
+  SquareParking,
   UserCheck,
   Wind,
   X,
@@ -75,6 +76,7 @@ export function Shell() {
   const moreRoutes = [
     '/air-quality',
     '/bus-search',
+    '/parking',
     '/tourism',
     '/heritage',
     '/healthcare',
@@ -93,6 +95,7 @@ export function Shell() {
   const hasMoreItems =
     canSee('air_quality') ||
     canSee('bus_search') ||
+    canSee('parking') ||
     canSee('tourism') ||
     canSee('facilities') ||
     canSee('hotlines') ||
@@ -222,6 +225,15 @@ export function Shell() {
                       >
                         <BusFront size={16} />
                         <span>Tra cứu xe buýt</span>
+                      </NavLink>
+                    )}
+                    {canSee('parking') && (
+                      <NavLink
+                        to="/parking"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <SquareParking size={16} />
+                        <span>Tra cứu điểm đỗ xe</span>
                       </NavLink>
                     )}
                     {canSee('tourism') && (
@@ -579,6 +591,12 @@ export function Shell() {
                   <NavLink to="/bus-search" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
                     <BusFront size={18} style={{ color: '#2563eb' }} />
                     <span>Tra cứu xe buýt</span>
+                  </NavLink>
+                )}
+                {canSee('parking') && (
+                  <NavLink to="/parking" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <SquareParking size={18} style={{ color: '#2563eb' }} />
+                    <span>Tra cứu điểm đỗ xe</span>
                   </NavLink>
                 )}
                 {canSee('tourism') && (

@@ -2,7 +2,7 @@
 import type { User } from 'oidc-client-ts';
 import { rolesOf, unitOf } from './auth';
 
-export type Feature = 'reports' | 'administrative_feedback' | 'business_feedback' | 'bulletins' | 'surveys' | 'appointments' | 'air_quality' | 'hotlines' | 'communications' | 'community_groups' | 'social_feedback' | 'digital_ward' | 'bus_search' | 'tourism' | 'facilities';
+export type Feature = 'reports' | 'administrative_feedback' | 'business_feedback' | 'bulletins' | 'surveys' | 'appointments' | 'air_quality' | 'hotlines' | 'communications' | 'community_groups' | 'social_feedback' | 'digital_ward' | 'bus_search' | 'tourism' | 'facilities' | 'parking';
 const featureRoles: Record<Feature, string> = {
   reports: 'reports_operator',
   administrative_feedback: 'administrative_feedback_operator',
@@ -19,6 +19,7 @@ const featureRoles: Record<Feature, string> = {
   bus_search: 'bus_search_operator',
   tourism: 'tourism_operator',
   facilities: 'facilities_operator',
+  parking: 'parking_operator',
 };
 const reportUnits = new Set(['infrastructure', 'environment', 'transport', 'intake']);
 
@@ -38,7 +39,7 @@ export function managementOf(user: User | null): Feature[] {
   return (Object.keys(featureRoles) as Feature[]).filter((feature) => canManage(user, feature));
 }
 
-const publicFeatures = new Set<Feature>(['bulletins', 'air_quality', 'hotlines', 'bus_search', 'tourism', 'facilities']);
+const publicFeatures = new Set<Feature>(['bulletins', 'air_quality', 'hotlines', 'bus_search', 'tourism', 'facilities', 'parking']);
 
 export function canOpenFeature(user: User | null, feature: Feature): boolean {
   if (publicFeatures.has(feature)) return true;
