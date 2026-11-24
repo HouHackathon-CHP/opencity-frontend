@@ -1143,6 +1143,9 @@ export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritag
                             duration: 800,
                           });
                         }
+                        if (window.innerWidth < 960 && mapContainerRef.current) {
+                          mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
                       }}
                     >
                       <div className="stop-card-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -1353,6 +1356,7 @@ export function TourismPage({ mode: initialMode }: { mode?: 'tourism' | 'heritag
 
               {selectedDestination && (
                 <div
+                  className="destination-detail-floating-card"
                   style={{
                     position: 'absolute',
                     bottom: 16,

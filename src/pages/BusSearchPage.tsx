@@ -431,6 +431,9 @@ export function BusSearchPage() {
     try {
       const data = await request<BusRouteDetail>(`/api/opencity/bus/routes/${encodeURIComponent(routeId)}`, token);
       setSelectedRoute(data);
+      if (window.innerWidth < 960 && mapContainerRef.current) {
+        mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     } catch (err) {
       console.error('Failed to fetch route detail:', err);
     }
@@ -1775,6 +1778,9 @@ export function BusSearchPage() {
         duration: 800,
       });
     }
+    if (window.innerWidth < 960 && mapContainerRef.current) {
+      mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   };
 
   return (
@@ -1818,20 +1824,9 @@ export function BusSearchPage() {
 
       {!user && (
         <div className="bus-container page-width" style={{ paddingBottom: 0 }}>
-          <div style={{
-            background: 'linear-gradient(90deg, #eff6ff 0%, #f0fdf4 100%)',
-            border: '1px solid #bfdbfe',
-            borderRadius: 10,
-            padding: '10px 18px',
-            marginBottom: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            flexWrap: 'wrap',
-          }}>
+          <div className="public-mode-banner">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#1e40af', fontSize: '0.9rem' }}>
-              <Info size={18} />
+              <Info size={18} style={{ flexShrink: 0 }} />
               <span>
                 Bạn đang truy cập ở chế độ <strong>Công dân công cộng</strong> (Tra cứu trực tiếp hơn 5.000 điểm dừng và 184 tuyến buýt).
               </span>
@@ -2377,33 +2372,35 @@ export function BusSearchPage() {
 
                       <div className="quick-dest-input-container" ref={quickDestWrapperRef}>
                         <div className="quick-dest-input-inner">
-                          <MapPin size={17} className="text-rose-500 shrink-0" />
-                          <input
-                            type="text"
-                            className="quick-dest-input"
-                            placeholder="Nhập nơi bạn muốn đến (Bách Khoa, Mỹ Đình, Hồ Gươm, Đại học Mỏ...)"
-                            value={quickDestQuery}
-                            onChange={(e) => {
-                              setQuickDestQuery(e.target.value);
-                              setShowQuickDestSuggestions(true);
-                            }}
-                            onFocus={() => setShowQuickDestSuggestions(true)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                void handleQuickDestinationSearch(quickDestQuery);
-                                setShowQuickDestSuggestions(false);
-                              }
-                            }}
-                          />
-                          {quickDestQuery && (
-                            <button
-                              type="button"
-                              className="quick-dest-clear"
-                              onClick={() => setQuickDestQuery('')}
-                            >
-                              ✕
-                            </button>
-                          )}
+                          <div className="quick-dest-input-row">
+                            <MapPin size={17} className="text-rose-500 shrink-0" />
+                            <input
+                              type="text"
+                              className="quick-dest-input"
+                              placeholder="Nhập nơi bạn muốn đến (Bách Khoa, Mỹ Đình, Hồ Gươm, Đại học Mỏ...)"
+                              value={quickDestQuery}
+                              onChange={(e) => {
+                                setQuickDestQuery(e.target.value);
+                                setShowQuickDestSuggestions(true);
+                              }}
+                              onFocus={() => setShowQuickDestSuggestions(true)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  void handleQuickDestinationSearch(quickDestQuery);
+                                  setShowQuickDestSuggestions(false);
+                                }
+                              }}
+                            />
+                            {quickDestQuery && (
+                              <button
+                                type="button"
+                                className="quick-dest-clear"
+                                onClick={() => setQuickDestQuery('')}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                           <button
                             type="button"
                             className="btn btn-primary btn-quick-dest-submit"
@@ -2514,6 +2511,9 @@ export function BusSearchPage() {
                                       pitch: 50,
                                       duration: 600,
                                     });
+                                  }
+                                  if (window.innerWidth < 960 && mapContainerRef.current) {
+                                    mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                                   }
                                   if (hasRoutes) {
                                     selectRouteById(st.routes[0]);
@@ -2886,7 +2886,12 @@ export function BusSearchPage() {
                           <div
                             key={idx}
                             className={`recommendation-card ${isSelected ? 'selected' : ''}`}
-                            onClick={() => setSelectedRecIndex(idx)}
+                            onClick={() => {
+                              setSelectedRecIndex(idx);
+                              if (window.innerWidth < 960 && mapContainerRef.current) {
+                                mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                              }
+                            }}
                           >
                             <div className="rec-header">
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
