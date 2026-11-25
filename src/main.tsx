@@ -11,6 +11,7 @@ import {
   ClipboardList,
   FileText,
   Globe,
+  Hospital,
   Layers,
   Landmark,
   MapPin,
@@ -47,6 +48,8 @@ const SocialFeedbackPage = React.lazy(() => import('./pages/SocialFeedbackPage')
 const DigitalWardPage = React.lazy(() => import('./pages/DigitalWardPage').then((module) => ({ default: module.DigitalWardPage })));
 const BusSearchPage = React.lazy(() => import('./pages/BusSearchPage').then((module) => ({ default: module.BusSearchPage })));
 const TourismPage = React.lazy(() => import('./pages/TourismPage').then((module) => ({ default: module.TourismPage })));
+const HealthcarePage = React.lazy(() => import('./pages/HealthcarePage').then((module) => ({ default: module.HealthcarePage })));
+const EducationPage = React.lazy(() => import('./pages/EducationPage').then((module) => ({ default: module.EducationPage })));
 
 type FeatureCardMeta = {
   label: string;
@@ -199,6 +202,16 @@ const FEATURE_CARDS: Record<Feature, FeatureCardMeta> = {
     accentColor: '#be123c',
     accentBg: '#ffe4e6',
     href: '/tourism',
+  },
+  facilities: {
+    label: 'Cơ sở Y tế, Nhà thuốc & Trường học',
+    tag: 'Tiện ích Dân sinh & Giáo dục',
+    desc: 'Bản đồ 3D tra cứu mạng lưới bệnh viện, phòng khám, cấp cứu 24/7, nhà thuốc GPP và hệ thống trường học, Đại học trên nền tảng bản đồ mở.',
+    statusBadge: 'Dữ liệu số hóa OSM',
+    icon: Hospital,
+    accentColor: '#e11d48',
+    accentBg: '#fff1f2',
+    href: '/healthcare',
   },
 };
 
@@ -405,6 +418,9 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/bus" element={<Navigate to="/bus-search" replace />} />
                 <Route path="/tourism" element={<TourismPage mode="tourism" />} />
                 <Route path="/heritage" element={<TourismPage mode="heritage" />} />
+                <Route path="/facilities" element={<Navigate to="/healthcare" replace />} />
+                <Route path="/healthcare" element={<HealthcarePage />} />
+                <Route path="/education" element={<EducationPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

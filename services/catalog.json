@@ -51,9 +51,9 @@
 
     { "id": "health-record", "category": "health", "name": "Sổ sức khỏe điện tử", "description": "Kết nối hồ sơ sức khỏe khi được cấp quyền.", "icon": "ClipboardPlus", "kind": "connector", "status": "needs-integration" },
     { "id": "medical-info", "category": "health", "name": "Thông tin khám chữa bệnh", "description": "Tra cứu thông tin dịch vụ y tế.", "icon": "HeartPulse", "kind": "connector", "status": "needs-integration" },
-    { "id": "health-facilities", "category": "health", "name": "Cơ sở y tế", "description": "Danh mục và bản đồ cơ sở y tế.", "icon": "Hospital", "kind": "connector", "status": "needs-integration" },
+    { "id": "health-facilities", "category": "health", "name": "Cơ sở y tế & Nhà thuốc", "description": "Bản đồ 3D tra cứu bệnh viện, phòng khám, cấp cứu 24/7 và nhà thuốc GPP trên nền tảng bản đồ mở.", "icon": "Hospital", "kind": "native", "status": "available", "route": "/healthcare" },
     { "id": "insurance", "category": "health", "name": "Bảo hiểm xã hội", "description": "Điểm truy cập dịch vụ bảo hiểm xã hội.", "icon": "HeartHandshake", "kind": "link", "status": "needs-integration" },
-    { "id": "pharmacies", "category": "health", "name": "Cơ sở dược", "description": "Tra cứu cơ sở dược.", "icon": "Pill", "kind": "connector", "status": "needs-integration" },
+    { "id": "pharmacies", "category": "health", "name": "Cơ sở dược & Nhà thuốc", "description": "Tra cứu nhà thuốc GPP và cơ sở kinh doanh dược phẩm gần bạn.", "icon": "Pill", "kind": "native", "status": "available", "route": "/healthcare?category=pharmacy" },
     { "id": "health-portal", "category": "health", "name": "Cổng sức khỏe", "description": "Thông tin sức khỏe từ đơn vị cung cấp.", "icon": "Globe", "kind": "link", "status": "needs-integration" },
 
     { "id": "community-groups", "category": "community", "name": "Nhóm cộng đồng", "description": "Tham gia nhóm và trao đổi cùng cư dân trong địa bàn.", "icon": "UsersRound", "kind": "native", "status": "available", "route": "/community/groups" },
@@ -62,7 +62,7 @@
     { "id": "front-organizations", "category": "community", "name": "Mặt trận và đoàn thể", "description": "Mặt trận, công đoàn, phụ nữ, nông dân, cựu chiến binh và thanh niên.", "icon": "HandHeart", "kind": "link", "status": "needs-integration" },
     { "id": "policy-registration", "category": "community", "name": "Đăng ký chương trình", "description": "Điểm đăng ký các chương trình công cộng.", "icon": "ClipboardCheck", "kind": "connector", "status": "needs-integration" },
 
-    { "id": "schools", "category": "education", "name": "Trường học", "description": "Tra cứu cơ sở giáo dục.", "icon": "School", "kind": "connector", "status": "needs-integration" },
+    { "id": "schools", "category": "education", "name": "Trường học & Đại học", "description": "Tra cứu mạng lưới các trường Đại học, THPT, THCS, Tiểu học và điểm chuẩn trên bản đồ số hóa.", "icon": "School", "kind": "native", "status": "available", "route": "/education" },
     { "id": "school-verification", "category": "education", "name": "Xác thực trường học", "description": "Điểm truy cập công cụ xác thực chuyên ngành.", "icon": "BadgeCheck", "kind": "link", "status": "needs-integration" },
     { "id": "national-school", "category": "education", "name": "Trường học số", "description": "Điểm kết nối nền tảng trường học số.", "icon": "BookOpenCheck", "kind": "link", "status": "needs-integration" },
     { "id": "enrollment", "category": "education", "name": "Tuyển sinh đầu cấp", "description": "Tra cứu và đăng ký tuyển sinh.", "icon": "GraduationCap", "kind": "connector", "status": "needs-integration" },

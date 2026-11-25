@@ -40,6 +40,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
 import { canManage } from '../lib/permissions';
+import { Pagination } from '../components/Pagination';
 import {
   request,
   type BusAuditReport,
@@ -334,7 +335,6 @@ export function BusSearchPage() {
     return stops.slice(startIdx, startIdx + STOPS_PER_PAGE);
   }, [stops, currentStopPage]);
 
-  const [jumpPageInput, setJumpPageInput] = useState<string>('');
 
   const handleStopPageChange = (newPage: number) => {
     const targetPage = Math.min(Math.max(1, newPage), totalStopPages);
@@ -3206,113 +3206,15 @@ export function BusSearchPage() {
                   )}
                 </div>
 
-                {totalStopPages > 1 && (
-                  <div className="bus-pagination-wrapper">
-                    <div className="pagination-summary">
-                      Trang <strong>{currentStopPage}</strong> / <strong>{totalStopPages}</strong> (Hiển thị {(currentStopPage - 1) * STOPS_PER_PAGE + 1} - {Math.min(currentStopPage * STOPS_PER_PAGE, stops.length)} trong tổng số {stops.length.toLocaleString('vi-VN')} điểm dừng)
-                    </div>
-
-                    <div className="pagination-controls">
-                      <button
-                        type="button"
-                        className="pagination-btn"
-                        onClick={() => handleStopPageChange(1)}
-                        disabled={currentStopPage <= 1}
-                        title="Về trang đầu tiên (Trang 1)"
-                      >
-                        «
-                      </button>
-
-                      <button
-                        type="button"
-                        className="pagination-btn"
-                        onClick={() => handleStopPageChange(currentStopPage - 1)}
-                        disabled={currentStopPage <= 1}
-                        title="Trang trước"
-                      >
-                        ‹
-                      </button>
-
-                      {(() => {
-                        const pages: (number | string)[] = [];
-                        const delta = 2;
-                        const left = currentStopPage - delta;
-                        const right = currentStopPage + delta;
-
-                        for (let i = 1; i <= totalStopPages; i++) {
-                          if (i === 1 || i === totalStopPages || (i >= left && i <= right)) {
-                            pages.push(i);
-                          } else if (pages[pages.length - 1] !== '...') {
-                            pages.push('...');
-                          }
-                        }
-
-                        return pages.map((p, idx) =>
-                          p === '...' ? (
-                            <span key={`dots-${idx}`} className="pagination-ellipsis">
-                              …
-                            </span>
-                          ) : (
-                            <button
-                              key={`page-${p}`}
-                              type="button"
-                              className={`pagination-btn ${p === currentStopPage ? 'active' : ''}`}
-                              onClick={() => handleStopPageChange(Number(p))}
-                            >
-                              {p}
-                            </button>
-                          )
-                        );
-                      })()}
-
-                      <button
-                        type="button"
-                        className="pagination-btn"
-                        onClick={() => handleStopPageChange(currentStopPage + 1)}
-                        disabled={currentStopPage >= totalStopPages}
-                        title="Trang tiếp theo"
-                      >
-                        ›
-                      </button>
-
-                      <button
-                        type="button"
-                        className="pagination-btn"
-                        onClick={() => handleStopPageChange(totalStopPages)}
-                        disabled={currentStopPage >= totalStopPages}
-                        title="Đến trang cuối cùng"
-                      >
-                        »
-                      </button>
-                    </div>
-
-                    <form
-                      className="pagination-jump-form"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const pNum = parseInt(jumpPageInput, 10);
-                        if (!isNaN(pNum) && pNum >= 1 && pNum <= totalStopPages) {
-                          handleStopPageChange(pNum);
-                          setJumpPageInput('');
-                        }
-                      }}
-                    >
-                      <span>Đến trang:</span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={totalStopPages}
-                        className="pagination-jump-input"
-                        placeholder={String(currentStopPage)}
-                        value={jumpPageInput}
-                        onChange={(e) => setJumpPageInput(e.target.value)}
-                      />
-                      <button type="submit" className="pagination-btn" style={{ height: 28, fontSize: 12 }}>
-                        Đi
-                      </button>
-                    </form>
-                  </div>
-                )}
+                <Pagination
+                  currentPage={currentStopPage}
+                  totalPages={totalStopPages}
+                  totalItems={stops.length}
+                  itemsPerPage={STOPS_PER_PAGE}
+                  itemLabel="điểm dừng"
+                  onPageChange={handleStopPageChange}
+                  accentColor="#0284c7"
+                />
               </div>
             )}
 
