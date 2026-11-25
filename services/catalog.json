@@ -38,7 +38,7 @@
     { "id": "warnings", "category": "news", "name": "Thông tin cảnh báo", "description": "Cảnh báo theo khu vực do đơn vị vận hành đăng tải.", "icon": "TriangleAlert", "kind": "native", "status": "available", "route": "/bulletins" },
     { "id": "fraud-alerts", "category": "news", "name": "Cảnh báo thủ đoạn tội phạm", "description": "Nội dung cảnh báo từ cơ quan có thẩm quyền.", "icon": "ShieldAlert", "kind": "connector", "status": "needs-integration" },
     { "id": "social-credit", "category": "news", "name": "Thông tin tín dụng chính sách", "description": "Thông tin chương trình tín dụng chính sách.", "icon": "BadgeInfo", "kind": "link", "status": "needs-integration" },
-    { "id": "ward-map", "category": "news", "name": "Bản đồ xã/phường", "description": "Tra cứu đơn vị hành chính và khu vực.", "icon": "Map", "kind": "connector", "status": "needs-integration" },
+    { "id": "ward-map", "category": "news", "name": "Bản đồ xã/phường", "description": "Tra cứu ranh giới địa giới hành chính, trụ sở UBND và dịch vụ công 126 xã/phường toàn Hà Nội.", "icon": "Map", "kind": "native", "status": "available", "route": "/ward-map" },
 
     { "id": "traffic-cameras", "category": "transport", "name": "Camera giao thông", "description": "Nguồn camera được cấp quyền chia sẻ.", "icon": "Camera", "kind": "connector", "status": "needs-integration" },
     { "id": "traffic-violations", "category": "transport", "name": "Thông báo vi phạm giao thông", "description": "Tra cứu từ hệ thống có thẩm quyền.", "icon": "FileWarning", "kind": "connector", "status": "needs-integration" },
@@ -46,7 +46,7 @@
     { "id": "find-bus", "category": "transport", "name": "Tìm buýt", "description": "Tìm kiếm tuyến buýt, điểm đón trả và tìm đường đi thông minh.", "icon": "BusFront", "kind": "native", "status": "available", "route": "/bus-search" },
     { "id": "airport-bus", "category": "transport", "name": "Vé xe buýt sân bay", "description": "Điểm kết nối đặt vé chuyên tuyến.", "icon": "Plane", "kind": "connector", "status": "needs-integration" },
     { "id": "bus-routes", "category": "transport", "name": "Tra cứu tuyến xe", "description": "Tra cứu lộ trình, trạm dừng và bản đồ giao thông công cộng OpenStreetMap.", "icon": "Route", "kind": "native", "status": "available", "route": "/bus-search?tab=routes" },
-    { "id": "parking", "category": "transport", "name": "Tra cứu điểm đỗ", "description": "Tìm bãi và điểm đỗ xe.", "icon": "ParkingCircle", "kind": "connector", "status": "needs-integration" },
+    { "id": "parking", "category": "transport", "name": "Tra cứu điểm đỗ", "description": "Bản đồ không gian số tra cứu vị trí bãi đỗ xe ô tô, điểm gửi xe máy, hầm đỗ thông minh và điểm đỗ lòng đường tại Hà Nội.", "icon": "SquareParking", "kind": "native", "status": "available", "route": "/parking" },
     { "id": "traffic-info", "category": "transport", "name": "Thông tin giao thông", "description": "Tin tức và tình trạng giao thông.", "icon": "TrafficCone", "kind": "connector", "status": "needs-integration" },
 
     { "id": "health-record", "category": "health", "name": "Sổ sức khỏe điện tử", "description": "Kết nối hồ sơ sức khỏe khi được cấp quyền.", "icon": "ClipboardPlus", "kind": "connector", "status": "needs-integration" },

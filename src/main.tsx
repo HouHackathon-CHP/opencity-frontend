@@ -19,6 +19,7 @@ import {
   PhoneCall,
   Shield,
   Sparkles,
+  SquareParking,
   UserCheck,
   Wind,
 } from 'lucide-react';
@@ -50,6 +51,8 @@ const BusSearchPage = React.lazy(() => import('./pages/BusSearchPage').then((mod
 const TourismPage = React.lazy(() => import('./pages/TourismPage').then((module) => ({ default: module.TourismPage })));
 const HealthcarePage = React.lazy(() => import('./pages/HealthcarePage').then((module) => ({ default: module.HealthcarePage })));
 const EducationPage = React.lazy(() => import('./pages/EducationPage').then((module) => ({ default: module.EducationPage })));
+const ParkingPage = React.lazy(() => import('./pages/ParkingPage').then((module) => ({ default: module.ParkingPage })));
+const WardMapPage = React.lazy(() => import('./pages/WardMapPage').then((module) => ({ default: module.WardMapPage })));
 
 type FeatureCardMeta = {
   label: string;
@@ -213,6 +216,16 @@ const FEATURE_CARDS: Record<Feature, FeatureCardMeta> = {
     accentBg: '#fff1f2',
     href: '/healthcare',
   },
+  parking: {
+    label: 'Bản đồ & Điểm đỗ xe Hà Nội',
+    tag: 'Giao thông đô thị OSM',
+    desc: 'Bản đồ không gian số tra cứu vị trí bãi đỗ ô tô, điểm gửi xe máy, hầm đỗ thông minh và điểm trông giữ lòng đường với dữ liệu OpenStreetMap.',
+    statusBadge: 'Dữ liệu số hóa OSM',
+    icon: SquareParking,
+    accentColor: '#2563eb',
+    accentBg: '#eff6ff',
+    href: '/parking',
+  },
 };
 
 function HomePage() {
@@ -367,7 +380,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function ScrollToTop() {
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
 
   React.useLayoutEffect(() => {
     const rootEl = document.documentElement;
@@ -377,7 +390,7 @@ function ScrollToTop() {
     rootEl.scrollTop = 0;
     document.body.scrollTop = 0;
     rootEl.style.scrollBehavior = prev;
-  }, [pathname, search]);
+  }, [pathname]);
 
   return null;
 }
@@ -421,6 +434,9 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/facilities" element={<Navigate to="/healthcare" replace />} />
                 <Route path="/healthcare" element={<HealthcarePage />} />
                 <Route path="/education" element={<EducationPage />} />
+                <Route path="/parking" element={<ParkingPage />} />
+                <Route path="/ward-map" element={<WardMapPage />} />
+                <Route path="/wards" element={<Navigate to="/ward-map" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

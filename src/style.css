@@ -8405,6 +8405,31 @@ html:has(body.modal-open) {
   min-height: 600px;
 }
 
+/* Ward / Administrative unit cards in WardMapPage */
+.bus-card {
+  background: var(--color-bg-card, #ffffff);
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  border-radius: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+}
+
+.bus-card:hover {
+  border-color: #818cf8;
+  background: var(--color-bg-card, #ffffff);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -4px rgba(79, 70, 229, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.bus-card.selected {
+  border-color: #4f46e5;
+  background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.22), 0 10px 28px -4px rgba(79, 70, 229, 0.16);
+}
+
 .map-view-header {
   display: flex;
   align-items: center;
@@ -10983,6 +11008,10 @@ textarea.filter-input {
     max-width: 100% !important;
   }
 
+  .mobile-map-jump-bar {
+    display: flex !important;
+  }
+
   .bus-right-map-panel {
     order: 2;
     position: relative !important;
@@ -11145,14 +11174,35 @@ textarea.filter-input {
   }
 
   /* Floating detail popup on map */
-  .destination-detail-floating-card {
+  .destination-detail-floating-card,
+  .floating-stop-detail {
     left: 8px !important;
     right: 8px !important;
     bottom: 8px !important;
     max-width: none !important;
-    padding: 14px 14px !important;
+    padding: 12px 14px !important;
     border-radius: 14px !important;
-    max-height: 65% !important;
+    max-height: 55% !important;
+    overflow-y: auto !important;
+  }
+
+  /* Ward Map Legend Responsive */
+  .ward-map-legend {
+    top: 48px !important;
+    left: 8px !important;
+    right: 8px !important;
+    max-width: calc(100% - 16px) !important;
+    padding: 4px 8px !important;
+    gap: 8px !important;
+    font-size: 10.5px !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .ward-map-legend::-webkit-scrollbar {
+    display: none !important;
   }
 
   /* Card and pagination styling */
@@ -11365,5 +11415,25 @@ textarea.filter-input {
     min-height: 280px !important;
   }
 }
+
+/* Ward Map Hover Tooltip */
+.ward-map-hover-popup {
+  pointer-events: none;
+  z-index: 30;
+}
+
+.ward-map-hover-popup .maplibregl-popup-content {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(8px);
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.2), 0 0 16px rgba(79, 70, 229, 0.12) !important;
+  border: 1px solid #c7d2fe !important;
+  padding: 8px 12px !important;
+}
+
+.ward-map-hover-popup .maplibregl-popup-tip {
+  border-top-color: rgba(255, 255, 255, 0.96) !important;
+}
+
 
 

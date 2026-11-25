@@ -17,12 +17,14 @@ import {
   Landmark,
   LogIn,
   LogOut,
+  Map,
   MapPin,
   Menu,
   Newspaper,
   PhoneCall,
   Shield,
   ShieldCheck,
+  SquareParking,
   UserCheck,
   Wind,
   X,
@@ -75,6 +77,7 @@ export function Shell() {
   const moreRoutes = [
     '/air-quality',
     '/bus-search',
+    '/parking',
     '/tourism',
     '/heritage',
     '/healthcare',
@@ -93,6 +96,7 @@ export function Shell() {
   const hasMoreItems =
     canSee('air_quality') ||
     canSee('bus_search') ||
+    canSee('parking') ||
     canSee('tourism') ||
     canSee('facilities') ||
     canSee('hotlines') ||
@@ -224,6 +228,15 @@ export function Shell() {
                         <span>Tra cứu xe buýt</span>
                       </NavLink>
                     )}
+                    {canSee('parking') && (
+                      <NavLink
+                        to="/parking"
+                        className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <SquareParking size={16} />
+                        <span>Tra cứu điểm đỗ xe</span>
+                      </NavLink>
+                    )}
                     {canSee('tourism') && (
                       <>
                         <NavLink
@@ -323,6 +336,13 @@ export function Shell() {
                         <span>Xã/phường số</span>
                       </NavLink>
                     )}
+                    <NavLink
+                      to="/ward-map"
+                      className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                    >
+                      <Map size={16} />
+                      <span>Bản đồ xã/phường</span>
+                    </NavLink>
                   </div>
                 )}
               </div>
@@ -581,6 +601,12 @@ export function Shell() {
                     <span>Tra cứu xe buýt</span>
                   </NavLink>
                 )}
+                {canSee('parking') && (
+                  <NavLink to="/parking" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <SquareParking size={18} style={{ color: '#2563eb' }} />
+                    <span>Tra cứu điểm đỗ xe</span>
+                  </NavLink>
+                )}
                 {canSee('tourism') && (
                   <>
                     <NavLink to="/tourism" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
@@ -647,6 +673,10 @@ export function Shell() {
                     <span>Xã/phường số</span>
                   </NavLink>
                 )}
+                <NavLink to="/ward-map" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                  <Map size={18} style={{ color: '#4f46e5' }} />
+                  <span>Bản đồ xã/phường</span>
+                </NavLink>
               </div>
 
               {/* Logout button if user logged in */}
