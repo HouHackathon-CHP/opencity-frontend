@@ -10,7 +10,7 @@ const base = '/api/opencity/hotlines';
 const emptyForm = { name: '', unit: '', phone: '', area: '', hours: '', description: '', active: true };
 
 export function HotlinesPage() {
-  const { user, loading: authLoading, login } = useAuth();
+  const { user } = useAuth();
   const token = user?.access_token || '';
   const operator = canManage(user, 'hotlines');
   const [items, setItems] = useState<Hotline[]>([]);
@@ -23,7 +23,6 @@ export function HotlinesPage() {
   const [notice, setNotice] = useState('');
 
   const refresh = useCallback(async () => {
-    if (!token) { setItems([]); return; }
     setLoading(true);
     try {
       setItems(await request<Hotline[]>(base, token));
@@ -72,10 +71,8 @@ export function HotlinesPage() {
       <p className="intro-paragraph">Tra cứu số liên hệ và giờ trực do đơn vị vận hành OpenCity công bố. Chạm số điện thoại để mở ứng dụng gọi.</p>
     </div><PhoneCall size={46} aria-hidden="true" /></div>
 
-    {!user ? <section className="appointment-panel"><h2>Đăng nhập để xem danh bạ</h2>
-      <button className="btn-primary" type="button" disabled={authLoading} onClick={() => void login()}>Đăng nhập</button>
-    </section> : <>
-      <div className="appointment-toolbar"><p>{operator ? 'Quản lý danh bạ trong tenant' : 'Liên hệ hỗ trợ trong tenant của bạn'}</p>
+    <>
+      <div className="appointment-toolbar"><p>{operator ? 'Quản lý danh bạ trong tenant' : 'Liên hệ hỗ trợ đã công bố'}</p>
         <button className="btn-outline" type="button" disabled={loading} onClick={() => void refresh()}><RefreshCw size={16} /> Làm mới</button></div>
       {error && <div className="alert-box alert-error" role="alert">{error}</div>}
       {notice && <div className="alert-box alert-success" role="status">{notice}</div>}
@@ -117,6 +114,6 @@ export function HotlinesPage() {
           <div className="hotline-actions"><a className="btn-primary" href={`tel:${item.phone.replace(/[^\d+]/g, '')}`}><PhoneCall size={16} /> {item.phone}</a>
             {operator && <button className="btn-outline" type="button" onClick={() => edit(item)}>Chỉnh sửa</button>}</div>
         </article>)}</section>
-    </>}
+    </>
   </div>;
 }

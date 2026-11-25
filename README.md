@@ -5,6 +5,7 @@ OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-
 ## Current scope
 
 - A file-defined service catalog covering **60 service concepts in 12 categories**, transcribed and grouped from the screenshots supplied for the project. Each entry states whether it is available, planned, or awaiting a provider integration.
+- Visitors can read published news and alerts, active hotlines, visible air-quality stations, and bus routes without signing in. The gateway serves only the configured public tenant for these reads; publishing, editing, personal cases, and appointments still require an account.
 - An `admin`-only `/admin` console shows tenant-scoped operational counts and links into the existing management modules. Keycloak continues to manage accounts and realm roles; this console does not store credentials or grant roles.
 - A hotline directory at `/hotlines` lets citizens find active support numbers; `hotlines_operator` or `admin` can add, edit and hide entries. The Android app opens the device dialer rather than placing calls automatically.
 - Search without Vietnamese diacritics, category filters, local favorites, responsive layout and service details.
@@ -49,13 +50,22 @@ come from `dxos-core/.env`; do not copy them into frontend configuration.
 | Demo account | Password variable | Page to test |
 | --- | --- | --- |
 | `dxos-citizen` | `DEMO_CITIZEN_PASSWORD` | `/reports`, `/reports/map`, `/administrative-feedback`, `/business-feedback`, `/appointments` |
-| `dxos-dispatcher` | `DEMO_OPERATOR_PASSWORD` | Dispatch and SLA dashboard at `/reports` |
-| `dxos-reports`, `dxos-reports-environment` | `DEMO_OPERATOR_PASSWORD` | Assigned unit reports at `/reports` |
-| `dxos-bulletins`, `dxos-surveys` | `DEMO_OPERATOR_PASSWORD` | `/bulletins`, `/surveys` |
-| `dxos-appointments` | `DEMO_OPERATOR_PASSWORD` | `/appointments` |
-| `dxos-administrative-feedback` | `DEMO_OPERATOR_PASSWORD` | `/administrative-feedback` |
-| `dxos-business-feedback` | `DEMO_OPERATOR_PASSWORD` | `/business-feedback` |
-| `dxos-hotlines` | `DEMO_OPERATOR_PASSWORD` | `/hotlines` |
+| `dxos-admin` | `DEMO_ADMIN_PASSWORD` | `/admin` and all management pages |
+| `dxos-dispatcher` | `DEMO_DISPATCHER_PASSWORD` | Dispatch and SLA dashboard at `/reports` |
+| `dxos-reports` | `DEMO_REPORTS_PASSWORD` | Infrastructure reports at `/reports` |
+| `dxos-reports-environment` | `DEMO_REPORTS_ENVIRONMENT_PASSWORD` | Environment reports at `/reports` |
+| `dxos-bulletins` | `DEMO_BULLETINS_PASSWORD` | `/bulletins` |
+| `dxos-surveys` | `DEMO_SURVEYS_PASSWORD` | `/surveys` |
+| `dxos-appointments` | `DEMO_APPOINTMENTS_PASSWORD` | `/appointments` |
+| `dxos-administrative-feedback` | `DEMO_ADMINISTRATIVE_FEEDBACK_PASSWORD` | `/administrative-feedback` |
+| `dxos-air-quality` | `DEMO_AIR_QUALITY_PASSWORD` | `/air-quality` |
+| `dxos-business-feedback` | `DEMO_BUSINESS_FEEDBACK_PASSWORD` | `/business-feedback` |
+| `dxos-hotlines` | `DEMO_HOTLINES_PASSWORD` | `/hotlines` |
+| `dxos-communications` | `DEMO_COMMUNICATIONS_PASSWORD` | `/communications` |
+| `dxos-community` | `DEMO_COMMUNITY_PASSWORD` | `/community/groups` |
+| `dxos-social-feedback` | `DEMO_SOCIAL_FEEDBACK_PASSWORD` | `/social-feedback` |
+| `dxos-digital-ward` | `DEMO_DIGITAL_WARD_PASSWORD` | `/digital-wards` |
+| `dxos-bus-search` | `DEMO_BUS_SEARCH_PASSWORD` | `/bus-search` |
 
 Report unit staff see cases only after a dispatcher assigns them. For the
 business petition flow, submit with `dxos-citizen`, then sign in as
