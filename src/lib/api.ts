@@ -21,20 +21,28 @@ export type Report = {
   updated_at: string;
   workflow_id: string | null;
   state: string | null;
-  history: { action: string; from_state: string | null; to_state: string | null;
-    actor: string; created_at: string; from_unit?: string | null; to_unit?: string | null; note?: string | null }[];
+  history: {
+    action: string; from_state: string | null; to_state: string | null;
+    actor: string; created_at: string; from_unit?: string | null; to_unit?: string | null; note?: string | null
+  }[];
   warnings?: string[];
 };
 
 export type ReportsDashboard = {
   generated_at: string;
-  counts: { total: number; new: number; triaged: number; in_progress: number; resolved: number;
-    unassigned: number; due_soon: number; overdue: number };
-  units: { unit_id: string; total: number; active: number; resolved: number;
-    due_soon: number; overdue: number }[];
-  urgent: { id: string; title: string; category: string; address: string;
+  counts: {
+    total: number; new: number; triaged: number; in_progress: number; resolved: number;
+    unassigned: number; due_soon: number; overdue: number
+  };
+  units: {
+    unit_id: string; total: number; active: number; resolved: number;
+    due_soon: number; overdue: number
+  }[];
+  urgent: {
+    id: string; title: string; category: string; address: string;
     state: string | null; assigned_unit: string | null; due_at: string | null;
-    priority: 'overdue' | 'due_soon' | 'unassigned' }[];
+    priority: 'overdue' | 'due_soon' | 'unassigned'
+  }[];
 };
 
 export type AdminOverview = {
@@ -161,7 +169,7 @@ export async function request<T>(path: string, token: string, init: RequestInit 
         headers['X-Dxos-Roles'] = claims.realm_access.roles.join(',');
       }
       if (claims.unit_id) headers['X-Dxos-Unit'] = claims.unit_id;
-    } catch {}
+    } catch { }
   }
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
@@ -181,7 +189,7 @@ export async function request<T>(path: string, token: string, init: RequestInit 
           })
           .join(', ');
       }
-    } catch {}
+    } catch { }
     if (response.status === 401 || detail === 'Bearer token required') {
       detail = 'Vui lòng đăng nhập tài khoản cán bộ để thực hiện thao tác này.';
     } else if (response.status === 403) {
@@ -804,6 +812,83 @@ export async function deleteParking(token: string, id: string): Promise<{ messag
     method: 'DELETE',
   });
 }
+
+// Ward / Commune Administrative Map API
+export type WardSummary = {
+  id: string;
+  code: string;
+  name: string;
+  full_name: string;
+  district: string;
+  type: 'Phường' | 'Xã' | 'Thị trấn' | string;
+  area_km2: number;
+  postal_code: string;
+  center_lat: number;
+  center_lon: number;
+  office_address: string;
+  phone: string;
+  office_hours: string;
+  population: number;
+  distance_km?: number | null;
+};
+
+export type WardDetail = WardSummary & {
+  bbox: number[];
+  services_list: string[];
+  hotlines: { label: string; phone: string }[];
+  active: boolean;
+};
+
+export type DistrictSummary = {
+  district: string;
+  ward_count: number;
+  total_area_km2: number;
+  total_population: number;
+  types_count: Record<string, number>;
+};
+
+export type WardLocateResult = {
+  ward: WardDetail;
+  distance_km: number;
+  located_inside: boolean;
+};
+
+export async function listWards(
+  token: string,
+  params: {
+    keyword?: string;
+    district?: string;
+    ward_type?: string;
+    lat?: number;
+    lon?: number;
+    limit?: number;
+    offset?: number;
+  } = {}
+): Promise<WardSummary[]> {
+  const q = new URLSearchParams();
+  if (params.keyword) q.set('keyword', params.keyword);
+  if (params.district && params.district !== 'all') q.set('district', params.district);
+  if (params.ward_type && params.ward_type !== 'all') q.set('ward_type', params.ward_type);
+  if (params.lat !== undefined) q.set('lat', params.lat.toString());
+  if (params.lon !== undefined) q.set('lon', params.lon.toString());
+  if (params.limit !== undefined) q.set('limit', params.limit.toString());
+  if (params.offset !== undefined) q.set('offset', params.offset.toString());
+  const qs = q.toString();
+  return request<WardSummary[]>(`/api/opencity/wards${qs ? `?${qs}` : ''}`, token);
+}
+
+export async function listWardDistricts(token: string): Promise<DistrictSummary[]> {
+  return request<DistrictSummary[]>('/api/opencity/wards/districts', token);
+}
+
+export async function getWardDetail(id: string, token: string): Promise<WardDetail> {
+  return request<WardDetail>(`/api/opencity/wards/${id}`, token);
+}
+
+export async function locateWard(lat: number, lon: number, token: string): Promise<WardLocateResult> {
+  return request<WardLocateResult>(`/api/opencity/wards/locate?lat=${lat}&lon=${lon}`, token);
+}
+
 
 
 

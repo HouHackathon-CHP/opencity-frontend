@@ -52,6 +52,7 @@ const TourismPage = React.lazy(() => import('./pages/TourismPage').then((module)
 const HealthcarePage = React.lazy(() => import('./pages/HealthcarePage').then((module) => ({ default: module.HealthcarePage })));
 const EducationPage = React.lazy(() => import('./pages/EducationPage').then((module) => ({ default: module.EducationPage })));
 const ParkingPage = React.lazy(() => import('./pages/ParkingPage').then((module) => ({ default: module.ParkingPage })));
+const WardMapPage = React.lazy(() => import('./pages/WardMapPage').then((module) => ({ default: module.WardMapPage })));
 
 type FeatureCardMeta = {
   label: string;
@@ -379,7 +380,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function ScrollToTop() {
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
 
   React.useLayoutEffect(() => {
     const rootEl = document.documentElement;
@@ -389,7 +390,7 @@ function ScrollToTop() {
     rootEl.scrollTop = 0;
     document.body.scrollTop = 0;
     rootEl.style.scrollBehavior = prev;
-  }, [pathname, search]);
+  }, [pathname]);
 
   return null;
 }
@@ -434,6 +435,8 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/healthcare" element={<HealthcarePage />} />
                 <Route path="/education" element={<EducationPage />} />
                 <Route path="/parking" element={<ParkingPage />} />
+                <Route path="/ward-map" element={<WardMapPage />} />
+                <Route path="/wards" element={<Navigate to="/ward-map" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

@@ -17,6 +17,7 @@ import {
   Landmark,
   LogIn,
   LogOut,
+  Map,
   MapPin,
   Menu,
   Newspaper,
@@ -335,6 +336,13 @@ export function Shell() {
                         <span>Xã/phường số</span>
                       </NavLink>
                     )}
+                    <NavLink
+                      to="/ward-map"
+                      className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                    >
+                      <Map size={16} />
+                      <span>Bản đồ xã/phường</span>
+                    </NavLink>
                   </div>
                 )}
               </div>
@@ -665,6 +673,10 @@ export function Shell() {
                     <span>Xã/phường số</span>
                   </NavLink>
                 )}
+                <NavLink to="/ward-map" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                  <Map size={18} style={{ color: '#4f46e5' }} />
+                  <span>Bản đồ xã/phường</span>
+                </NavLink>
               </div>
 
               {/* Logout button if user logged in */}
