@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
   Activity,
   ArrowRight,
@@ -12,6 +12,7 @@ import {
   FileText,
   Globe,
   Layers,
+  Landmark,
   MapPin,
   Megaphone,
   PhoneCall,
@@ -45,6 +46,7 @@ const CommunityGroupsPage = React.lazy(() => import('./pages/CommunityGroupsPage
 const SocialFeedbackPage = React.lazy(() => import('./pages/SocialFeedbackPage').then((module) => ({ default: module.SocialFeedbackPage })));
 const DigitalWardPage = React.lazy(() => import('./pages/DigitalWardPage').then((module) => ({ default: module.DigitalWardPage })));
 const BusSearchPage = React.lazy(() => import('./pages/BusSearchPage').then((module) => ({ default: module.BusSearchPage })));
+const TourismPage = React.lazy(() => import('./pages/TourismPage').then((module) => ({ default: module.TourismPage })));
 
 type FeatureCardMeta = {
   label: string;
@@ -187,6 +189,16 @@ const FEATURE_CARDS: Record<Feature, FeatureCardMeta> = {
     accentColor: '#0284c7',
     accentBg: '#f0f9ff',
     href: '/bus-search',
+  },
+  tourism: {
+    label: 'Bản đồ Du lịch & Di tích Lịch sử',
+    tag: 'Di sản & Văn hóa OSM',
+    desc: 'Khám phá các di tích lịch sử, bảo tàng, danh thắng nghìn năm Thăng Long - Hà Nội với dữ liệu mở OpenStreetMap.',
+    statusBadge: 'Đã kích hoạt',
+    icon: Landmark,
+    accentColor: '#be123c',
+    accentBg: '#ffe4e6',
+    href: '/tourism',
   },
 };
 
@@ -341,6 +353,22 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return rolesOf(user).includes('admin') ? children : <Navigate to="/" replace />;
 }
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  React.useLayoutEffect(() => {
+    const rootEl = document.documentElement;
+    const prev = rootEl.style.scrollBehavior;
+    rootEl.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    rootEl.scrollTop = 0;
+    document.body.scrollTop = 0;
+    rootEl.style.scrollBehavior = prev;
+  }, [pathname, search]);
+
+  return null;
+}
+
 // OIDC state is stored per origin. Use the one origin registered in Keycloak.
 if (window.location.hostname === '127.0.0.1' && window.location.port === '3000') {
   const canonicalUrl = new URL(window.location.href);
@@ -350,6 +378,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <React.Suspense fallback={<div className="page-width">Đang tải chức năng…</div>}>
             <Routes>
@@ -374,6 +403,8 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/air-quality" element={<FeatureRoute feature="air_quality"><AirQualityPage /></FeatureRoute>} />
                 <Route path="/bus-search" element={<BusSearchPage />} />
                 <Route path="/bus" element={<Navigate to="/bus-search" replace />} />
+                <Route path="/tourism" element={<TourismPage mode="tourism" />} />
+                <Route path="/heritage" element={<TourismPage mode="heritage" />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

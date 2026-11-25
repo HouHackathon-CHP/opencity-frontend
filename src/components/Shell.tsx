@@ -7,19 +7,23 @@ import {
   CalendarDays,
   ChevronDown,
   ClipboardList,
+  Compass,
   ExternalLink,
   Globe,
   Layers,
   LayoutGrid,
+  Landmark,
   LogIn,
   LogOut,
   MapPin,
+  Menu,
   Newspaper,
   PhoneCall,
   Shield,
   ShieldCheck,
   UserCheck,
   Wind,
+  X,
 } from 'lucide-react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
@@ -38,6 +42,7 @@ export function Shell() {
 
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -51,11 +56,24 @@ export function Shell() {
 
   useEffect(() => {
     setMoreMenuOpen(false);
+    setMobileDrawerOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (mobileDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileDrawerOpen]);
 
   const moreRoutes = [
     '/air-quality',
     '/bus-search',
+    '/tourism',
     '/hotlines',
     '/surveys',
     '/appointments',
@@ -69,6 +87,7 @@ export function Shell() {
   const hasMoreItems =
     canSee('air_quality') ||
     canSee('bus_search') ||
+    canSee('tourism') ||
     canSee('hotlines') ||
     canSee('surveys') ||
     canSee('appointments') ||
@@ -119,6 +138,16 @@ export function Shell() {
       {/* Main Top Navigation */}
       <header className="topbar">
         <div className="topbar-inner">
+          <button
+            type="button"
+            className="mobile-menu-btn"
+            onClick={() => setMobileDrawerOpen(true)}
+            aria-label="Mở danh mục dịch vụ"
+            title="Mở danh mục dịch vụ"
+          >
+            <Menu size={22} />
+          </button>
+
           {/* Unified Brand Logo */}
           <Link className="brand" to="/" aria-label="OpenCity — Trang chủ">
             <Logo size={38} />
@@ -187,6 +216,24 @@ export function Shell() {
                         <BusFront size={16} />
                         <span>Tra cứu xe buýt</span>
                       </NavLink>
+                    )}
+                    {canSee('tourism') && (
+                      <>
+                        <NavLink
+                          to="/tourism"
+                          className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                        >
+                          <Compass size={16} />
+                          <span>Bản đồ Du lịch</span>
+                        </NavLink>
+                        <NavLink
+                          to="/heritage"
+                          className={({ isActive }) => `nav-dropdown-item ${isActive ? 'active' : ''}`}
+                        >
+                          <Landmark size={16} />
+                          <span>Bản đồ Di tích</span>
+                        </NavLink>
+                      </>
                     )}
                     {canSee('hotlines') && (
                       <NavLink
@@ -303,7 +350,7 @@ export function Shell() {
               >
                 <LogIn size={16} />
                 <span>{loading ? 'Đang kết nối…' : 'Đăng nhập'}</span>
-                <ArrowRight size={15} />
+                <ArrowRight size={15} className="login-arrow-icon" />
               </button>
             )}
           </div>
@@ -388,27 +435,204 @@ export function Shell() {
           <LayoutGrid size={20} />
           <span>{admin ? 'Quản trị' : operator ? 'Vận hành' : 'Dịch vụ'}</span>
         </NavLink>
-        {canSee('reports') && <NavLink to="/reports" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
-          <MapPin size={20} />
-          <span>Phản ánh</span>
-        </NavLink>}
-        {canSee('surveys') && <NavLink to="/surveys" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
-          <ClipboardList size={20} />
-          <span>Khảo sát</span>
-        </NavLink>}
-        {canSee('bulletins') && <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
-          <Newspaper size={20} />
-          <span>Tin tức</span>
-        </NavLink>}
-        {canSee('appointments') && <NavLink to="/appointments" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
-          <CalendarDays size={20} />
-          <span>Lịch hẹn</span>
-        </NavLink>}
-        {user && <NavLink to="/notifications" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
-          <Bell size={20} />
-          <span>Thông báo{unread ? ` (${unread})` : ''}</span>
-        </NavLink>}
+        {canSee('reports') && (
+          <NavLink to="/reports" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+            <MapPin size={20} />
+            <span>Phản ánh</span>
+          </NavLink>
+        )}
+        <button
+          type="button"
+          className={`mobile-nav-item ${isMoreActive || mobileDrawerOpen ? 'active' : ''}`}
+          onClick={() => setMobileDrawerOpen(true)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+        >
+          <Layers size={20} />
+          <span>Dịch vụ khác</span>
+        </button>
+        {canSee('bulletins') && (
+          <NavLink to="/bulletins" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+            <Newspaper size={20} />
+            <span>Tin tức</span>
+          </NavLink>
+        )}
+        {user ? (
+          <NavLink to="/notifications" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+            <Bell size={20} />
+            <span>Thông báo{unread ? ` (${unread})` : ''}</span>
+          </NavLink>
+        ) : (
+          <NavLink to="/surveys" className={({ isActive }) => (isActive ? 'mobile-nav-item active' : 'mobile-nav-item')}>
+            <ClipboardList size={20} />
+            <span>Khảo sát</span>
+          </NavLink>
+        )}
       </nav>
+
+      {/* Modern Slide-out Mobile Services Sidebar Drawer */}
+      {mobileDrawerOpen && (
+        <div className="mobile-drawer-backdrop" onClick={() => setMobileDrawerOpen(false)}>
+          <div className="mobile-drawer-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-drawer-header">
+              <Link to="/" className="brand" onClick={() => setMobileDrawerOpen(false)} aria-label="OpenCity">
+                <Logo size={32} />
+              </Link>
+              <button
+                type="button"
+                className="mobile-drawer-close"
+                onClick={() => setMobileDrawerOpen(false)}
+                aria-label="Đóng danh mục"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="mobile-drawer-content">
+              {/* User profile / login widget */}
+              {user ? (
+                <div className="mobile-drawer-user-card">
+                  <div className="user-avatar" title={displayName(user)}>
+                    {displayName(user).slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="user-meta" style={{ display: 'flex' }}>
+                    <strong className="user-name">{displayName(user)}</strong>
+                    <span className="user-subtext">{operator ? 'Cán bộ xử lý' : 'Tài khoản công dân'}</span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="mobile-drawer-login-btn"
+                  onClick={() => {
+                    setMobileDrawerOpen(false);
+                    void login();
+                  }}
+                  disabled={loading}
+                >
+                  <LogIn size={16} />
+                  <span>{loading ? 'Đang kết nối…' : 'Đăng nhập hệ thống'}</span>
+                </button>
+              )}
+
+              {/* Main Channels */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-drawer-section-title">Kênh điều hành</span>
+                <NavLink to="/" end className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                  <LayoutGrid size={18} />
+                  <span>{admin ? 'Quản trị hệ thống' : operator ? 'Vận hành dịch vụ' : 'Cổng dịch vụ đô thị'}</span>
+                </NavLink>
+                {admin && (
+                  <NavLink to="/admin" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <Shield size={18} />
+                    <span>Hệ thống quản trị</span>
+                  </NavLink>
+                )}
+                {canSee('reports') && (
+                  <NavLink to="/reports" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <MapPin size={18} />
+                    <span>Phản ánh hiện trường</span>
+                  </NavLink>
+                )}
+                {canSee('bulletins') && (
+                  <NavLink to="/bulletins" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <Newspaper size={18} />
+                    <span>Tin tức & Cảnh báo</span>
+                  </NavLink>
+                )}
+              </div>
+
+              {/* Secondary Civic Services (All items from Ảnh 2) */}
+              <div className="mobile-drawer-section">
+                <span className="mobile-drawer-section-title">Dịch vụ đô thị mở</span>
+                {canSee('air_quality') && (
+                  <NavLink to="/air-quality" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <Wind size={18} style={{ color: '#0d9488' }} />
+                    <span>Không khí & AQI</span>
+                  </NavLink>
+                )}
+                {canSee('bus_search') && (
+                  <NavLink to="/bus-search" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <BusFront size={18} style={{ color: '#2563eb' }} />
+                    <span>Tra cứu xe buýt</span>
+                  </NavLink>
+                )}
+                {canSee('tourism') && (
+                  <>
+                    <NavLink to="/tourism" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                      <Compass size={18} style={{ color: '#059669' }} />
+                      <span>Bản đồ Du lịch</span>
+                    </NavLink>
+                    <NavLink to="/heritage" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                      <Landmark size={18} style={{ color: '#e11d48' }} />
+                      <span>Bản đồ Di tích</span>
+                    </NavLink>
+                  </>
+                )}
+                {canSee('hotlines') && (
+                  <NavLink to="/hotlines" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <PhoneCall size={18} style={{ color: '#d97706' }} />
+                    <span>Đường dây nóng 24/7</span>
+                  </NavLink>
+                )}
+                {canSee('surveys') && (
+                  <NavLink to="/surveys" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <ClipboardList size={18} style={{ color: '#6366f1' }} />
+                    <span>Khảo sát ý kiến</span>
+                  </NavLink>
+                )}
+                {canSee('appointments') && (
+                  <NavLink to="/appointments" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <CalendarDays size={18} style={{ color: '#9333ea' }} />
+                    <span>Tiếp công dân</span>
+                  </NavLink>
+                )}
+                {canSee('communications') && (
+                  <NavLink to="/communications" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <Newspaper size={18} style={{ color: '#475569' }} />
+                    <span>Thông tin truyền thông</span>
+                  </NavLink>
+                )}
+                {canSee('community_groups') && (
+                  <NavLink to="/community/groups" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <Globe size={18} style={{ color: '#0284c7' }} />
+                    <span>Nhóm cộng đồng</span>
+                  </NavLink>
+                )}
+                {canSee('social_feedback') && (
+                  <NavLink to="/social-feedback" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <Globe size={18} style={{ color: '#0891b2' }} />
+                    <span>Góp ý, phản biện xã hội</span>
+                  </NavLink>
+                )}
+                {canSee('digital_ward') && (
+                  <NavLink to="/digital-wards" className={({ isActive }) => `mobile-drawer-item ${isActive ? 'active' : ''}`}>
+                    <MapPin size={18} style={{ color: '#dc2626' }} />
+                    <span>Xã/phường số</span>
+                  </NavLink>
+                )}
+              </div>
+
+              {/* Logout button if user logged in */}
+              {user && (
+                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid #e2e8f0' }}>
+                  <button
+                    type="button"
+                    className="mobile-drawer-item"
+                    style={{ color: '#ef4444', width: '100%', border: 'none', background: 'none' }}
+                    onClick={() => {
+                      setMobileDrawerOpen(false);
+                      void logout();
+                    }}
+                  >
+                    <LogOut size={18} />
+                    <span>Đăng xuất tài khoản</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
