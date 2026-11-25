@@ -7,6 +7,7 @@ type AuthContextValue = {
   user: User | null;
   loading: boolean;
   login: () => Promise<void>;
+  register: () => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
 };
@@ -37,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     login: () => userManager.signinRedirect({ state: { returnTo: window.location.pathname } }),
+    register: () => userManager.signinRedirect({ prompt: 'create', state: { returnTo: window.location.pathname } }),
     logout: () => userManager.signoutRedirect(),
     refresh: async () => {
       const loaded = await userManager.getUser();
