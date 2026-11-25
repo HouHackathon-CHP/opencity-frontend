@@ -205,6 +205,7 @@ export function AirQualityPage() {
   // Modern
   const [areaFilter, setAreaFilter] = useState<string>('all');
   const [is3D, setIs3D] = useState(true);
+  const [usingRasterBasemap, setUsingRasterBasemap] = useState(false);
   const [showQcvnDetails, setShowQcvnDetails] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -227,6 +228,7 @@ export function AirQualityPage() {
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const initialMapFitDone = useRef(false);
+  const basemapCheckTimer = useRef<number | null>(null);
 
   function fitStationBounds(points: StationItem[]) {
     const map = mapRef.current;
@@ -555,7 +557,7 @@ export function AirQualityPage() {
   handleSelectStationRef.current = handleSelectStation;
 
   function toggle3D() {
-    if (!mapRef.current) return;
+    if (!mapRef.current || usingRasterBasemap) return;
     const next = !is3D;
     setIs3D(next);
     mapRef.current.easeTo({
@@ -655,6 +657,33 @@ export function AirQualityPage() {
         map.on('mouseleave', 'aqi-zones-fill', () => {
           map.getCanvas().style.cursor = '';
         });
+
+        // Some browsers load the style and our GeoJSON overlays while the vector
+        // basemap stays empty. Use raster street tiles only in that case.
+        basemapCheckTimer.current = window.setTimeout(() => {
+          if (mapRef.current !== map || map.getSource('aqi-raster-basemap')) return;
+          const streetLayers = ['highway_minor', 'highway_major_inner', 'label_city', 'water', 'park']
+            .filter((id) => Boolean(map.getLayer(id)));
+          const streetFeatures = streetLayers.length
+            ? map.queryRenderedFeatures({ layers: streetLayers })
+            : [];
+          if (streetFeatures.length > 0) return;
+
+          map.addSource('aqi-raster-basemap', {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors',
+          });
+          map.addLayer({
+            id: 'aqi-raster-basemap',
+            type: 'raster',
+            source: 'aqi-raster-basemap',
+          }, 'aqi-zones-fill');
+          map.easeTo({ pitch: 0, bearing: 0, duration: 500 });
+          setIs3D(false);
+          setUsingRasterBasemap(true);
+        }, 5000);
       });
 
       map.addControl(
@@ -671,6 +700,7 @@ export function AirQualityPage() {
     }
 
     return () => {
+      if (basemapCheckTimer.current !== null) window.clearTimeout(basemapCheckTimer.current);
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -1088,10 +1118,11 @@ export function AirQualityPage() {
               type="button"
               className="aqi-cam-btn"
               onClick={toggle3D}
-              title="Chuyển đổi góc nghiêng 3D / mặt phẳng 2D"
+              disabled={usingRasterBasemap}
+              title={usingRasterBasemap ? 'Đang dùng nền bản đồ 2D dự phòng' : 'Chuyển đổi góc nghiêng 3D / mặt phẳng 2D'}
             >
               <Compass size={13} />
-              <span>{is3D ? 'Góc nghiêng 3D' : 'Mặt phẳng 2D'}</span>
+              <span>{usingRasterBasemap ? 'Bản đồ 2D' : is3D ? 'Góc nghiêng 3D' : 'Mặt phẳng 2D'}</span>
             </button>
             <button
               type="button"
