@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   SquareParking,
   UserCheck,
+  UserPlus,
   Wind,
   X,
 } from 'lucide-react';
@@ -37,7 +38,7 @@ import { Logo } from './Logo';
 import { request, type Notification } from '../lib/api';
 
 export function Shell() {
-  const { user, loading, login, logout } = useAuth();
+  const { user, loading, login, register, logout } = useAuth();
   const operator = managementOf(user).length > 0;
   const admin = rolesOf(user).includes('admin');
   const canSee = (feature: Feature) => !loading && canOpenFeature(user, feature);
@@ -387,16 +388,22 @@ export function Shell() {
                 </div>
               </>
             ) : (
-              <button
-                type="button"
-                className="login-btn"
-                onClick={() => void login()}
-                disabled={loading}
-              >
-                <LogIn size={16} />
-                <span>{loading ? 'Đang kết nối…' : 'Đăng nhập'}</span>
-                <ArrowRight size={15} className="login-arrow-icon" />
-              </button>
+              <>
+                <button type="button" className="register-btn" onClick={() => void register()} disabled={loading}>
+                  <UserPlus size={16} />
+                  <span>Đăng ký</span>
+                </button>
+                <button
+                  type="button"
+                  className="login-btn"
+                  onClick={() => void login()}
+                  disabled={loading}
+                >
+                  <LogIn size={16} />
+                  <span>{loading ? 'Đang kết nối…' : 'Đăng nhập'}</span>
+                  <ArrowRight size={15} className="login-arrow-icon" />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -545,18 +552,27 @@ export function Shell() {
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  className="mobile-drawer-login-btn"
-                  onClick={() => {
+                <div className="mobile-drawer-auth-actions">
+                  <button type="button" className="mobile-drawer-register-btn" onClick={() => {
                     setMobileDrawerOpen(false);
-                    void login();
-                  }}
-                  disabled={loading}
-                >
-                  <LogIn size={16} />
-                  <span>{loading ? 'Đang kết nối…' : 'Đăng nhập hệ thống'}</span>
-                </button>
+                    void register();
+                  }} disabled={loading}>
+                    <UserPlus size={16} />
+                    <span>Đăng ký tài khoản công dân</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="mobile-drawer-login-btn"
+                    onClick={() => {
+                      setMobileDrawerOpen(false);
+                      void login();
+                    }}
+                    disabled={loading}
+                  >
+                    <LogIn size={16} />
+                    <span>{loading ? 'Đang kết nối…' : 'Đăng nhập hệ thống'}</span>
+                  </button>
+                </div>
               )}
 
               {/* Main Channels */}
