@@ -889,6 +889,24 @@ export async function locateWard(lat: number, lon: number, token: string): Promi
   return request<WardLocateResult>(`/api/opencity/wards/locate?lat=${lat}&lon=${lon}`, token);
 }
 
+export async function updateWard(
+  id: string,
+  data: {
+    office_address?: string;
+    phone?: string;
+    office_hours?: string;
+    population?: number;
+    services_list?: string[];
+  },
+  token: string
+): Promise<WardDetail> {
+  return request<WardDetail>(`/api/opencity/wards/${id}`, token, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+}
+
 
 
 

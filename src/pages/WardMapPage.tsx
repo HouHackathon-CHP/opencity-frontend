@@ -11,6 +11,7 @@ import {
   Layers,
   Map as MapIcon,
   MapPin,
+  Pencil,
   Phone,
   RefreshCw,
   Search,
@@ -23,13 +24,14 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/AuthProvider';
-import { apiBase } from '../lib/auth';
+import { apiBase, rolesOf } from '../lib/auth';
 import { Pagination } from '../components/Pagination';
 import {
   getWardDetail,
   listWardDistricts,
   listWards,
   locateWard,
+  updateWard,
   type DistrictSummary,
   type WardDetail,
   type WardSummary,
@@ -116,6 +118,81 @@ export function WardMapPage() {
   const prevSelectedWardIdRef = useRef<string | null>(null);
   const [selectedWardDetail, setSelectedWardDetail] = useState<WardDetail | null>(null);
 
+  // Admin permission & edit modal state
+  const userRoles = useMemo(() => rolesOf(user), [user]);
+  const isAdmin = userRoles.includes('admin') || userRoles.includes('digital_ward_operator');
+
+  const [editingWard, setEditingWard] = useState<WardDetail | null>(null);
+  const [editAddress, setEditAddress] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editHours, setEditHours] = useState('');
+  const [editPopulation, setEditPopulation] = useState<number | string>('');
+  const [editServices, setEditServices] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const openEditModal = (ward: WardDetail) => {
+    setEditingWard(ward);
+    setEditAddress(ward.office_address || '');
+    setEditPhone(ward.phone || '');
+    setEditHours(ward.office_hours || '');
+    setEditPopulation(ward.population || '');
+    setEditServices((ward.services_list || []).join('\n'));
+  };
+
+  const handleSaveWard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWard) return;
+    setIsSaving(true);
+    try {
+      const servicesArray = editServices
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const updated = await updateWard(
+        editingWard.id,
+        {
+          office_address: editAddress,
+          phone: editPhone,
+          office_hours: editHours,
+          population: Number(editPopulation) || 0,
+          services_list: servicesArray.length > 0 ? servicesArray : undefined,
+        },
+        token
+      );
+
+      setSelectedWardDetail(updated);
+
+      setWards((prev) =>
+        prev.map((w) =>
+          w.id === updated.id
+            ? {
+                ...w,
+                office_address: updated.office_address,
+                phone: updated.phone,
+                population: updated.population,
+                office_hours: updated.office_hours,
+              }
+            : w
+        )
+      );
+
+      setToast({
+        type: 'success',
+        message: `Đã cập nhật thông tin UBND ${updated.full_name} thành công!`,
+      });
+      setEditingWard(null);
+    } catch (err: any) {
+      console.error('Failed to update ward info', err);
+      setToast({
+        type: 'error',
+        message: err.message || 'Không thể cập nhật thông tin xã/phường. Vui lòng thử lại.',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   useEffect(() => {
     selectedWardIdRef.current = selectedWardId;
   }, [selectedWardId]);
@@ -127,6 +204,7 @@ export function WardMapPage() {
 
   // Map state
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const listTopRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
   const hoverPopupRef = useRef<maplibregl.Popup | null>(null);
@@ -483,6 +561,9 @@ export function WardMapPage() {
           duration: 1200,
         });
       }
+      if (window.innerWidth < 960 && mapContainerRef.current) {
+        mapContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
   };
 
@@ -702,7 +783,7 @@ export function WardMapPage() {
         {/* Layout Grid */}
         <div className="bus-layout-grid">
           {/* Left Panel: Search & Cards */}
-          <div className="bus-left-panel">
+          <div className="bus-left-panel" ref={listTopRef}>
             <div
               className="bus-filter-box"
               style={{
@@ -805,8 +886,35 @@ export function WardMapPage() {
               </div>
             )}
 
+            {/* Mobile Jump to Map Button */}
+            <div className="mobile-map-jump-bar" style={{ display: 'none', margin: '4px 0 10px' }}>
+              <button
+                type="button"
+                style={{
+                  width: '100%',
+                  padding: '9px 14px',
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  borderRadius: 10,
+                  background: '#eef2ff',
+                  color: '#4338ca',
+                  border: '1px solid #c7d2fe',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  boxShadow: '0 2px 8px -2px rgba(67, 56, 202, 0.15)',
+                }}
+                onClick={() => mapContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
+              >
+                <MapIcon size={14} />
+                <span>Xem ranh giới trên bản đồ ({filteredWards.length} đơn vị)</span>
+              </button>
+            </div>
+
             {/* List Cards */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 4 }}>
               {loading ? (
                 <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--color-text-muted)' }}>
                   <RefreshCw size={26} className="animate-spin" style={{ margin: '0 auto 8px' }} />
@@ -844,19 +952,29 @@ export function WardMapPage() {
                   return (
                     <div
                       key={w.id}
-                      className="bus-card"
+                      className={`bus-card ${isSelected ? 'selected' : ''}`}
                       style={{
-                        padding: '14px 16px',
+                        padding: '16px 18px',
                         cursor: 'pointer',
-                        borderColor: isSelected ? '#4f46e5' : undefined,
+                        borderRadius: 14,
+                        border: isSelected ? '2px solid #4f46e5' : '1.5px solid #e2e8f0',
+                        background: isSelected ? 'linear-gradient(180deg, #f8faff 0%, #ffffff 100%)' : '#ffffff',
                         boxShadow: isSelected
-                          ? '0 0 0 2px rgba(79, 70, 229, 0.25), 0 8px 24px -4px rgba(79, 70, 229, 0.15)'
-                          : undefined,
-                        background: isSelected ? '#f8faff' : undefined,
+                          ? '0 0 0 2px rgba(79, 70, 229, 0.2), 0 10px 28px -4px rgba(79, 70, 229, 0.16)'
+                          : '0 2px 6px -1px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03)',
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                       }}
                       onClick={() => handleSelectWard(w)}
                     >
-                      <div className="bus-card-header" style={{ marginBottom: 6 }}>
+                      <div
+                        className="bus-card-header"
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          marginBottom: 6,
+                        }}
+                      >
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                             <span
@@ -905,41 +1023,62 @@ export function WardMapPage() {
                           </div>
                         </div>
 
-                        <button
-                          type="button"
-                          className="btn-select-route"
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: 11.5,
-                            fontWeight: 700,
-                            borderRadius: 8,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            background: isSelected ? '#ea580c' : '#eef2ff',
-                            color: isSelected ? '#ffffff' : '#4338ca',
-                            border: '1px solid ' + (isSelected ? '#ea580c' : '#c7d2fe'),
-                            transition: 'all 0.15s ease',
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectWard(w);
-                          }}
-                          title={isSelected ? 'Bấm để hủy chọn' : 'Xem vị trí trên bản đồ'}
-                        >
-                          {isSelected ? (
-                            <>
-                              <X size={13} />
-                              <span>Hủy chọn</span>
-                            </>
-                          ) : (
-                            <>
-                              <MapPin size={13} />
-                              <span>Bản đồ</span>
-                            </>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                          {isSelected && (
+                            <button
+                              type="button"
+                              style={{
+                                padding: '3px 8px',
+                                fontSize: 11,
+                                fontWeight: 700,
+                                borderRadius: 6,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 3,
+                                background: '#ea580c',
+                                color: '#ffffff',
+                                border: '1px solid #ea580c',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectWard(w);
+                              }}
+                              title="Bỏ chọn xã/phường này"
+                            >
+                              <X size={12} />
+                              <span>Đang chọn</span>
+                            </button>
                           )}
-                        </button>
+
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              style={{
+                                width: 30,
+                                height: 30,
+                                borderRadius: '50%',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                border: '1px solid #e2e8f0',
+                                color: '#475569',
+                                background: '#ffffff',
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                getWardDetail(w.id, token).then((d) => openEditModal(d)).catch(() => {});
+                              }}
+                              title="Cán bộ: Chỉnh sửa thông tin UBND"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="bus-card-info-row" style={{ marginTop: 6, fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
@@ -947,34 +1086,36 @@ export function WardMapPage() {
                         <span style={{ wordBreak: 'break-word' }}>{w.office_address}</span>
                       </div>
 
-                      {/* Metrics bar */}
+                      {/* Metrics bar enclosed in clean container */}
                       <div
                         style={{
                           display: 'grid',
                           gridTemplateColumns: 'repeat(3, 1fr)',
-                          gap: 6,
-                          marginTop: 10,
-                          paddingTop: 8,
-                          borderTop: '1px solid var(--color-border)',
+                          gap: 8,
+                          marginTop: 12,
+                          padding: '10px 12px',
+                          background: isSelected ? '#f1f5f9' : '#f8fafc',
+                          borderRadius: 10,
+                          border: isSelected ? '1px solid #cbd5e1' : '1px solid #f1f5f9',
                           fontSize: 11.5,
                         }}
                       >
                         <div>
-                          <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: 10 }}>Diện tích</span>
-                          <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{w.area_km2} km²</span>
+                          <span style={{ color: '#64748b', display: 'block', fontSize: 10, fontWeight: 600 }}>Diện tích</span>
+                          <span style={{ fontWeight: 750, color: '#0f172a' }}>{w.area_km2} km²</span>
                         </div>
                         <div>
-                          <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: 10 }}>Dân số ước tính</span>
-                          <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                          <span style={{ color: '#64748b', display: 'block', fontSize: 10, fontWeight: 600 }}>Dân số ước tính</span>
+                          <span style={{ fontWeight: 750, color: '#0f172a' }}>
                             {w.population > 0 ? w.population.toLocaleString('vi-VN') : '—'}
                           </span>
                         </div>
                         <div>
-                          <span style={{ color: 'var(--color-text-muted)', display: 'block', fontSize: 10 }}>Đường dây nóng</span>
+                          <span style={{ color: '#64748b', display: 'block', fontSize: 10, fontWeight: 600 }}>Đường dây nóng</span>
                           <a
                             href={`tel:${w.phone}`}
                             onClick={(e) => e.stopPropagation()}
-                            style={{ fontWeight: 700, color: '#4f46e5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
+                            style={{ fontWeight: 750, color: '#4f46e5', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 3 }}
                           >
                             <Phone size={11} />
                             <span>{w.phone || '1022'}</span>
@@ -1011,7 +1152,7 @@ export function WardMapPage() {
               </div>
 
               {selectedWardDetail ? (
-                <div className="map-route-indicator" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="map-route-indicator" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span className="dot" style={{ backgroundColor: '#ea580c' }} />
                   <span style={{ fontWeight: 700, color: '#0f172a' }}>
                     {selectedWardDetail.full_name} ({selectedWardDetail.district})
@@ -1038,13 +1179,83 @@ export function WardMapPage() {
                   >
                     <X size={12} /> Hủy chọn
                   </button>
+
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      style={{
+                        marginLeft: 4,
+                        padding: '4px 10px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        background: '#fef3c7',
+                        color: '#b45309',
+                        border: '1px solid #fde68a',
+                        borderRadius: 8,
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                      onClick={() => openEditModal(selectedWardDetail)}
+                      title="Chỉnh sửa thông tin UBND này"
+                    >
+                      <Pencil size={11} /> Sửa thông tin
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="mobile-map-jump-bar"
+                    style={{
+                      display: 'none',
+                      marginLeft: 'auto',
+                      padding: '3px 8px',
+                      fontSize: 11,
+                      fontWeight: 650,
+                      borderRadius: 6,
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      border: '1px solid #cbd5e1',
+                      cursor: 'pointer',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                    onClick={() => listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    title="Cuộn lên danh sách các xã/phường"
+                  >
+                    <span>↑ Danh sách</span>
+                  </button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '12px', color: '#4338ca', fontWeight: 600 }}>
-                  <Building2 size={14} />
-                  <span>
-                    126 đơn vị hành chính cấp xã/phường toàn Hà Nội
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 6, fontSize: '12px', color: '#4338ca', fontWeight: 600 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Building2 size={14} />
+                    <span>
+                      126 đơn vị hành chính cấp xã/phường toàn Hà Nội
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="mobile-map-jump-bar"
+                    style={{
+                      display: 'none',
+                      padding: '3px 8px',
+                      fontSize: 11,
+                      fontWeight: 650,
+                      borderRadius: 6,
+                      background: '#f1f5f9',
+                      color: '#475569',
+                      border: '1px solid #cbd5e1',
+                      cursor: 'pointer',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                    onClick={() => listTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                    title="Cuộn lên danh sách các xã/phường"
+                  >
+                    <span>↑ Danh sách</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -1054,16 +1265,17 @@ export function WardMapPage() {
 
               {/* Map Legend Overlay */}
               <div
+                className="ward-map-legend"
                 style={{
                   position: 'absolute',
-                  top: 14,
+                  top: 58,
                   left: 14,
                   zIndex: 10,
                   background: 'rgba(255, 255, 255, 0.94)',
                   backdropFilter: 'blur(8px)',
                   border: '1px solid #c7d2fe',
                   borderRadius: 10,
-                  padding: '6px 12px',
+                  padding: '5px 12px',
                   boxShadow: '0 4px 14px rgba(15, 23, 42, 0.08)',
                   display: 'flex',
                   alignItems: 'center',
@@ -1183,27 +1395,52 @@ export function WardMapPage() {
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSelectedWardId(null)}
-                      style={{
-                        background: '#f1f5f9',
-                        border: '1px solid #e2e8f0',
-                        borderRadius: 8,
-                        cursor: 'pointer',
-                        color: '#64748b',
-                        padding: '4px 8px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        fontSize: 11.5,
-                        fontWeight: 650,
-                      }}
-                      title="Hủy chọn xã/phường này"
-                    >
-                      <X size={13} />
-                      <span>Hủy chọn</span>
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: '50%',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid #cbd5e1',
+                            color: '#475569',
+                            background: '#ffffff',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onClick={() => openEditModal(selectedWardDetail)}
+                          title="Cán bộ: Chỉnh sửa thông tin UBND"
+                        >
+                          <Pencil size={12} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedWardId(null)}
+                        style={{
+                          background: '#f1f5f9',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: 8,
+                          cursor: 'pointer',
+                          color: '#64748b',
+                          padding: '4px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 11.5,
+                          fontWeight: 650,
+                        }}
+                        title="Hủy chọn xã/phường này"
+                      >
+                        <X size={13} />
+                        <span>Hủy chọn</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div
@@ -1253,6 +1490,33 @@ export function WardMapPage() {
 
                   {/* Action buttons */}
                   <div style={{ display: 'flex', gap: 8, marginTop: 12, paddingTop: 10, borderTop: '1px solid #f1f5f9' }}>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(selectedWardDetail)}
+                        style={{
+                          padding: '7px 11px',
+                          borderRadius: 8,
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          background: '#fef3c7',
+                          color: '#b45309',
+                          border: '1px solid #fde68a',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4,
+                          boxShadow: '0 2px 8px rgba(245, 158, 11, 0.2)',
+                          whiteSpace: 'nowrap',
+                        }}
+                        title="Quản trị: Cập nhật trụ sở, hotline, dịch vụ công"
+                      >
+                        <Pencil size={12} />
+                        <span>Sửa thông tin</span>
+                      </button>
+                    )}
+
                     <a
                       href={`tel:${selectedWardDetail.phone}`}
                       style={{
@@ -1304,6 +1568,242 @@ export function WardMapPage() {
           </div>
         </div>
       </div>
+
+      {/* Edit Ward Modal for Admin */}
+      {editingWard && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={() => !isSaving && setEditingWard(null)}
+        >
+          <div
+            style={{
+              backgroundColor: '#ffffff',
+              borderRadius: 16,
+              width: '100%',
+              maxWidth: 540,
+              maxHeight: '92vh',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
+              border: '1px solid #c7d2fe',
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px 20px',
+                borderBottom: '1px solid #e2e8f0',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div
+                  style={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 10,
+                    background: '#e0e7ff',
+                    color: '#4338ca',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Pencil size={18} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 750, color: '#0f172a' }}>
+                    Cập nhật thông tin UBND {editingWard.full_name}
+                  </h3>
+                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                    Quận/Huyện: <strong>{editingWard.district}</strong> • Mã đơn vị: #{editingWard.postal_code || editingWard.code}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => !isSaving && setEditingWard(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  padding: 6,
+                  borderRadius: 6,
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveWard} style={{ padding: '20px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Office Address */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                    Địa chỉ Trụ sở UBND <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="bus-search-input"
+                    style={{ width: '100%', height: 38, padding: '8px 12px', fontSize: 13, borderRadius: 8, border: '1px solid #cbd5e1' }}
+                    value={editAddress}
+                    onChange={(e) => setEditAddress(e.target.value)}
+                    placeholder="VD: Trụ sở UBND Phường Ba Đình, Ba Đình, TP. Hà Nội"
+                  />
+                </div>
+
+                {/* Hotline & Population (responsive cols) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                      Đường dây nóng (Hotline) <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className="bus-search-input"
+                      style={{ width: '100%', height: 38, padding: '8px 12px', fontSize: 13, borderRadius: 8, border: '1px solid #cbd5e1' }}
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="VD: 024.3811111"
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                      Dân số ước tính (người)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="bus-search-input"
+                      style={{ width: '100%', height: 38, padding: '8px 12px', fontSize: 13, borderRadius: 8, border: '1px solid #cbd5e1' }}
+                      value={editPopulation}
+                      onChange={(e) => setEditPopulation(e.target.value)}
+                      placeholder="VD: 45000"
+                    />
+                  </div>
+                </div>
+
+                {/* Office Hours */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#334155', marginBottom: 6 }}>
+                    Giờ tiếp nhận hồ sơ / Thời gian làm việc
+                  </label>
+                  <input
+                    type="text"
+                    className="bus-search-input"
+                    style={{ width: '100%', height: 38, padding: '8px 12px', fontSize: 13, borderRadius: 8, border: '1px solid #cbd5e1' }}
+                    value={editHours}
+                    onChange={(e) => setEditHours(e.target.value)}
+                    placeholder="VD: 08:00 - 17:00 (Thứ Hai - Thứ Sáu)"
+                  />
+                </div>
+
+                {/* Public Services List (Textarea) */}
+                <div>
+                  <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#334155', marginBottom: 4 }}>
+                    Thủ tục hành chính công trực tuyến (Mỗi dòng một thủ tục)
+                  </label>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6 }}>
+                    Danh sách các dịch vụ công đang được số hóa và tiếp nhận qua Cổng dịch vụ công của địa bàn.
+                  </div>
+                  <textarea
+                    rows={4}
+                    className="bus-search-input"
+                    style={{ width: '100%', padding: '8px 12px', fontSize: 12.5, borderRadius: 8, border: '1px solid #cbd5e1', lineHeight: 1.5, resize: 'vertical' }}
+                    value={editServices}
+                    onChange={(e) => setEditServices(e.target.value)}
+                    placeholder="VD:&#10;Cấp đổi CCCD / Định danh điện tử VNeID&#10;Chứng thực bản sao điện tử & chữ ký&#10;Đăng ký khai sinh, kết hôn, khai tử"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: 10,
+                  marginTop: 20,
+                  paddingTop: 16,
+                  borderTop: '1px solid #e2e8f0',
+                }}
+              >
+                <button
+                  type="button"
+                  disabled={isSaving}
+                  onClick={() => setEditingWard(null)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 650,
+                    background: '#f1f5f9',
+                    color: '#475569',
+                    border: '1px solid #cbd5e1',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Hủy bỏ
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    background: '#4f46e5',
+                    color: '#ffffff',
+                    border: 'none',
+                    cursor: isSaving ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    boxShadow: '0 4px 12px rgba(79, 70, 229, 0.35)',
+                    opacity: isSaving ? 0.75 : 1,
+                  }}
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      <span>Đang lưu...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 size={15} />
+                      <span>Lưu thông tin</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
