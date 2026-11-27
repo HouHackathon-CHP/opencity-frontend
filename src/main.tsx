@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import {
   Activity,
   ArrowRight,
@@ -11,12 +11,15 @@ import {
   ClipboardList,
   FileText,
   Globe,
+  Hospital,
   Layers,
+  Landmark,
   MapPin,
   Megaphone,
   PhoneCall,
   Shield,
   Sparkles,
+  SquareParking,
   UserCheck,
   Wind,
 } from 'lucide-react';
@@ -45,6 +48,11 @@ const CommunityGroupsPage = React.lazy(() => import('./pages/CommunityGroupsPage
 const SocialFeedbackPage = React.lazy(() => import('./pages/SocialFeedbackPage').then((module) => ({ default: module.SocialFeedbackPage })));
 const DigitalWardPage = React.lazy(() => import('./pages/DigitalWardPage').then((module) => ({ default: module.DigitalWardPage })));
 const BusSearchPage = React.lazy(() => import('./pages/BusSearchPage').then((module) => ({ default: module.BusSearchPage })));
+const TourismPage = React.lazy(() => import('./pages/TourismPage').then((module) => ({ default: module.TourismPage })));
+const HealthcarePage = React.lazy(() => import('./pages/HealthcarePage').then((module) => ({ default: module.HealthcarePage })));
+const EducationPage = React.lazy(() => import('./pages/EducationPage').then((module) => ({ default: module.EducationPage })));
+const ParkingPage = React.lazy(() => import('./pages/ParkingPage').then((module) => ({ default: module.ParkingPage })));
+const WardMapPage = React.lazy(() => import('./pages/WardMapPage').then((module) => ({ default: module.WardMapPage })));
 
 type FeatureCardMeta = {
   label: string;
@@ -187,6 +195,36 @@ const FEATURE_CARDS: Record<Feature, FeatureCardMeta> = {
     accentColor: '#0284c7',
     accentBg: '#f0f9ff',
     href: '/bus-search',
+  },
+  tourism: {
+    label: 'Bản đồ Du lịch & Di tích Lịch sử',
+    tag: 'Di sản & Văn hóa OSM',
+    desc: 'Khám phá các di tích lịch sử, bảo tàng, danh thắng nghìn năm Thăng Long - Hà Nội với dữ liệu mở OpenStreetMap.',
+    statusBadge: 'Đã kích hoạt',
+    icon: Landmark,
+    accentColor: '#be123c',
+    accentBg: '#ffe4e6',
+    href: '/tourism',
+  },
+  facilities: {
+    label: 'Cơ sở Y tế, Nhà thuốc & Trường học',
+    tag: 'Tiện ích Dân sinh & Giáo dục',
+    desc: 'Bản đồ 3D tra cứu mạng lưới bệnh viện, phòng khám, cấp cứu 24/7, nhà thuốc GPP và hệ thống trường học, Đại học trên nền tảng bản đồ mở.',
+    statusBadge: 'Dữ liệu số hóa OSM',
+    icon: Hospital,
+    accentColor: '#e11d48',
+    accentBg: '#fff1f2',
+    href: '/healthcare',
+  },
+  parking: {
+    label: 'Bản đồ & Điểm đỗ xe Hà Nội',
+    tag: 'Giao thông đô thị OSM',
+    desc: 'Bản đồ không gian số tra cứu vị trí bãi đỗ ô tô, điểm gửi xe máy, hầm đỗ thông minh và điểm trông giữ lòng đường với dữ liệu OpenStreetMap.',
+    statusBadge: 'Dữ liệu số hóa OSM',
+    icon: SquareParking,
+    accentColor: '#2563eb',
+    accentBg: '#eff6ff',
+    href: '/parking',
   },
 };
 
@@ -341,6 +379,22 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return rolesOf(user).includes('admin') ? children : <Navigate to="/" replace />;
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  React.useLayoutEffect(() => {
+    const rootEl = document.documentElement;
+    const prev = rootEl.style.scrollBehavior;
+    rootEl.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    rootEl.scrollTop = 0;
+    document.body.scrollTop = 0;
+    rootEl.style.scrollBehavior = prev;
+  }, [pathname]);
+
+  return null;
+}
+
 // OIDC state is stored per origin. Use the one origin registered in Keycloak.
 if (window.location.hostname === '127.0.0.1' && window.location.port === '3000') {
   const canonicalUrl = new URL(window.location.href);
@@ -350,6 +404,7 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <BrowserRouter>
+        <ScrollToTop />
         <AuthProvider>
           <React.Suspense fallback={<div className="page-width">Đang tải chức năng…</div>}>
             <Routes>
@@ -374,6 +429,14 @@ if (window.location.hostname === '127.0.0.1' && window.location.port === '3000')
                 <Route path="/air-quality" element={<FeatureRoute feature="air_quality"><AirQualityPage /></FeatureRoute>} />
                 <Route path="/bus-search" element={<BusSearchPage />} />
                 <Route path="/bus" element={<Navigate to="/bus-search" replace />} />
+                <Route path="/tourism" element={<TourismPage mode="tourism" />} />
+                <Route path="/heritage" element={<TourismPage mode="heritage" />} />
+                <Route path="/facilities" element={<Navigate to="/healthcare" replace />} />
+                <Route path="/healthcare" element={<HealthcarePage />} />
+                <Route path="/education" element={<EducationPage />} />
+                <Route path="/parking" element={<ParkingPage />} />
+                <Route path="/ward-map" element={<WardMapPage />} />
+                <Route path="/wards" element={<Navigate to="/ward-map" replace />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>
