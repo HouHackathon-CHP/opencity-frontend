@@ -226,6 +226,20 @@ export function AirQualityPage() {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
+  const initialMapFitDone = useRef(false);
+
+  function fitStationBounds(points: StationItem[]) {
+    const map = mapRef.current;
+    if (!map) return;
+    const valid = points.filter((st) => Number.isFinite(st.latitude) && Number.isFinite(st.longitude));
+    if (valid.length >= 2) {
+      const bounds = new maplibregl.LngLatBounds();
+      valid.forEach((st) => bounds.extend([st.longitude, st.latitude]));
+      map.fitBounds(bounds, { padding: 80, duration: 800 });
+    } else if (valid.length === 1) {
+      map.flyTo({ center: [valid[0].longitude, valid[0].latitude], zoom: 12.5, duration: 800 });
+    }
+  }
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -456,10 +470,11 @@ export function AirQualityPage() {
   }
 
   function openBroadcastModal(station: StationDetail) {
-    const aqi = station.latest_reading?.aqi ?? 100;
+    if (!station.latest_reading) return;
+    const aqi = station.latest_reading.aqi;
     setAlertTitle(`Cảnh báo ô nhiễm không khí tại khu vực ${station.name}`);
     setAlertSummary(
-      `Chỉ số VN-AQI tại trạm ${station.name} đạt mức ${aqi} (${station.classification.label}). Khuyến cáo người dân khu vực ${station.area_type} hạn chế hoạt động thể lực ngoài trời.`
+      `Chỉ số AQI (US EPA) tại trạm ${station.name} đạt mức ${aqi} (${station.classification.label}). Khuyến cáo người dân khu vực ${station.area_type} hạn chế hoạt động thể lực ngoài trời.`
     );
     setShowAlertModal(true);
   }
@@ -551,20 +566,25 @@ export function AirQualityPage() {
   }
 
   function recenterMap() {
-    if (!mapRef.current) return;
-    mapRef.current.flyTo({
-      center: [105.815, 21.025],
-      zoom: 12.2,
-      pitch: is3D ? 52 : 0,
-      bearing: is3D ? -12 : 0,
-      duration: 800,
-    });
+    fitStationBounds(filteredStations);
   }
 
   const filteredStations = useMemo(() => {
     if (areaFilter === 'all') return stations;
     return stations.filter((s) => s.area_type === areaFilter);
   }, [stations, areaFilter]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !stations.length || initialMapFitDone.current) return;
+    const fit = () => {
+      fitStationBounds(stations);
+      initialMapFitDone.current = true;
+    };
+    if (map.loaded()) fit();
+    else map.once('load', fit);
+    return () => { map.off('load', fit); };
+  }, [stations]);
 
   useEffect(() => {
     if (!mapElement.current || mapRef.current) return;
@@ -661,7 +681,7 @@ export function AirQualityPage() {
     if (!map) return;
 
     const zoneFeatures: GeoJSON.Feature<GeoJSON.Polygon>[] = filteredStations
-      .filter((st) => typeof st.latitude === 'number' && typeof st.longitude === 'number')
+      .filter((st) => st.latest_reading && typeof st.latitude === 'number' && typeof st.longitude === 'number')
       .map((st) => {
         const isSelected = selectedStationCode === st.code;
         const isMaint = st.status === 'maintenance';
@@ -715,20 +735,28 @@ export function AirQualityPage() {
       const isMaint = st.status === 'maintenance';
       const isHidden = st.status === 'hidden';
       const color = isMaint ? '#64748b' : isHidden ? '#94a3b8' : (st.classification?.color || '#10b981');
-      const aqiText = isMaint ? 'Bảo trì' : isHidden ? 'Tạm ẩn' : `AQI ${aqi}`;
+      const aqiText = isMaint ? 'Bảo trì' : isHidden ? 'Tạm ẩn' : reading ? `AQI ${aqi}` : 'Chưa có AQI';
       const isSelected = selectedStationCode === st.code;
       const zoneDisplayName = st.name.replace(/^Trạm\s+/i, 'Vùng ');
 
       const el = document.createElement('div');
       el.className = `aqi-station-marker ${isSelected ? 'is-active' : ''} ${isHidden ? 'is-hidden' : ''}`;
-      el.innerHTML = `
-        <div class="aqi-marker-bubble" style="background-color: ${color}; opacity: ${isHidden ? '0.78' : '1'};">
-          <span class="aqi-zone-name">${zoneDisplayName}</span>
-          <span class="aqi-zone-sep">·</span>
-          <span class="aqi-zone-aqi">${aqiText}</span>
-        </div>
-        <div class="aqi-marker-tip" style="color: ${color};"></div>
-      `;
+      const bubble = document.createElement('div');
+      bubble.className = 'aqi-marker-bubble';
+      bubble.style.backgroundColor = color;
+      bubble.style.opacity = isHidden ? '0.78' : '1';
+      for (const [className, value] of [
+        ['aqi-zone-name', zoneDisplayName], ['aqi-zone-sep', '·'], ['aqi-zone-aqi', aqiText],
+      ]) {
+        const span = document.createElement('span');
+        span.className = className;
+        span.textContent = value;
+        bubble.appendChild(span);
+      }
+      const tip = document.createElement('div');
+      tip.className = 'aqi-marker-tip';
+      tip.style.color = color;
+      el.append(bubble, tip);
       el.title = isMaint
         ? `${st.name} - Đang bảo trì thiết bị`
         : isHidden
@@ -767,8 +795,12 @@ export function AirQualityPage() {
   const avgColor = avgAqi <= 50 ? '#10b981' : avgAqi <= 100 ? '#eab308' : avgAqi <= 150 ? '#f97316' : '#ef4444';
   const avgBg = avgAqi <= 50 ? '#ecfdf5' : avgAqi <= 100 ? '#fefce8' : avgAqi <= 150 ? '#fff7ed' : '#fef2f2';
 
-  const currentStationAqi = stationDetail?.latest_reading?.aqi ?? 0;
-  const visualHealth = getVisualHealthGuidance(currentStationAqi);
+  const currentStationAqi = stationDetail?.latest_reading?.aqi;
+  const visualHealth = currentStationAqi == null
+    ? Object.fromEntries(['outdoor', 'mask', 'ventilation', 'sensitive'].map((key) => [key, {
+        tone: '#64748b', label: 'Chưa có dữ liệu', desc: 'Trạm chưa công bố AQI hiện tại.',
+      }])) as ReturnType<typeof getVisualHealthGuidance>
+    : getVisualHealthGuidance(currentStationAqi);
 
   return (
     <div className="air-quality-page page-width aqi-container-modern">
@@ -851,8 +883,8 @@ export function AirQualityPage() {
               <span>MẠNG LƯỚI QUAN TRẮC MÔI TRƯỜNG ĐÔ THỊ</span>
             </div>
             <h1 className="aqi-header-h1">
-              <span>Bản Đồ Quan Trắc Không Khí & Chỉ Số VN-AQI</span>
-              <span className="aqi-qcvn-pill">QCVN 05:2023/BTNMT</span>
+              <span>Bản Đồ Quan Trắc Không Khí & Chỉ Số AQI (US EPA)</span>
+              <span className="aqi-qcvn-pill">Nguồn WAQI</span>
             </h1>
           </div>
         </div>
@@ -1003,7 +1035,7 @@ export function AirQualityPage() {
               </span>
             </div>
             <span className="aqi-ribbon-sub">
-              PM2.5: {summary.best_station?.latest_reading?.pm25 ?? '--'} µg/m³
+              PM2.5: {summary.best_station?.latest_reading?.pm25 ?? '--'} AQI
             </span>
           </div>
 
@@ -1076,7 +1108,7 @@ export function AirQualityPage() {
 
           <div className="aqi-map-floating-legend">
             <span style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a' }}>
-              Quy chuẩn VN-AQI:
+              Thang AQI (US EPA):
             </span>
             <div className="aqi-legend-scale">
               <span className="aqi-scale-stop">
@@ -1184,18 +1216,18 @@ export function AirQualityPage() {
                 const reading = stationDetail.latest_reading;
 
                 const pm25 = reading?.pm25 ?? 0;
-                const pm25Pct = Math.min(100, Math.round((pm25 / 75) * 100));
-                const pm25Color = pm25 <= 25 ? '#10b981' : pm25 <= 50 ? '#eab308' : '#ef4444';
+                const pm25Pct = Math.min(100, Math.round((pm25 / 300) * 100));
+                const pm25Color = pm25 <= 50 ? '#10b981' : pm25 <= 100 ? '#eab308' : '#ef4444';
 
                 const pm10 = reading?.pm10 ?? 0;
-                const pm10Pct = Math.min(100, Math.round((pm10 / 150) * 100));
+                const pm10Pct = Math.min(100, Math.round((pm10 / 300) * 100));
                 const pm10Color = pm10 <= 50 ? '#10b981' : pm10 <= 100 ? '#eab308' : '#ef4444';
 
                 return (
                   <div className="aqi-bento-hero" style={{ borderColor: isMaint ? '#cbd5e1' : color }}>
                     <div className="aqi-bento-main-row">
                       <div className="aqi-gauge-col">
-                        <span className="aqi-gauge-lbl">CHỈ SỐ VN-AQI</span>
+                        <span className="aqi-gauge-lbl">CHỈ SỐ AQI (US EPA)</span>
                         <div className="aqi-gauge-score" style={{ color }}>
                           {isMaint ? '--' : (reading?.aqi ?? '--')}
                         </div>
@@ -1209,10 +1241,10 @@ export function AirQualityPage() {
                         <div className="aqi-quad-cell">
                           <div className="aqi-quad-head">
                             <span className="aqi-quad-title">Bụi PM2.5</span>
-                            <span className="aqi-qcvn-chip">QCVN ≤50</span>
+                            <span className="aqi-qcvn-chip">Chỉ số riêng</span>
                           </div>
                           <div className="aqi-quad-val">
-                            {reading?.pm25 != null ? `${reading.pm25} µg/m³` : '---'}
+                            {reading?.pm25 != null ? `${reading.pm25} AQI` : '---'}
                           </div>
                           <div className="aqi-level-track">
                             <div
@@ -1225,10 +1257,10 @@ export function AirQualityPage() {
                         <div className="aqi-quad-cell">
                           <div className="aqi-quad-head">
                             <span className="aqi-quad-title">Bụi PM10</span>
-                            <span className="aqi-qcvn-chip">QCVN ≤100</span>
+                            <span className="aqi-qcvn-chip">Chỉ số riêng</span>
                           </div>
                           <div className="aqi-quad-val">
-                            {reading?.pm10 != null ? `${reading.pm10} µg/m³` : '---'}
+                            {reading?.pm10 != null ? `${reading.pm10} AQI` : '---'}
                           </div>
                           <div className="aqi-level-track">
                             <div
@@ -1421,7 +1453,7 @@ export function AirQualityPage() {
                             AQI {reading.aqi} · {reading.classification.label}
                           </strong>
                           <span className="aqi-hist-meta">
-                            PM2.5: {reading.pm25} µg/m³
+                            AQI PM2.5: {reading.pm25 ?? '--'}
                           </span>
                         </div>
                       </div>

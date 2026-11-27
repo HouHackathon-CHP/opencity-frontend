@@ -212,10 +212,10 @@ export type AirReading = {
   tenant: string;
   station_code: string;
   aqi: number;
-  pm25: number;
-  pm10: number;
-  temperature: number;
-  humidity: number;
+  pm25: number | null;
+  pm10: number | null;
+  temperature: number | null;
+  humidity: number | null;
   co: number | null;
   no2: number | null;
   o3: number | null;
