@@ -1,37 +1,99 @@
-# OpenCity Frontend — DX-OS Layer 2
+<div align="center">
 
-OpenCity is an open-source, mobile-friendly citizen service portal built on [DX-OS Core](https://github.com/HouHackathon-CHP/dxos-core) and the separate [OpenCity backend](https://github.com/HouHackathon-CHP/opencity-backend). It is a prototype inspired by the *service-hub pattern* shown in iHanoi, not an official Hanoi service, a fork, or a replacement for government systems. It uses original branding and no government logos or private APIs.
+# OpenCity Web Portal — Layer 3
 
-## Current scope
+**Cổng Dịch vụ Công dân Thông minh & Bảng Điều hành Đô thị trên nền DX-OS**
 
-- A file-defined service catalog covering **60 service concepts in 12 categories**, transcribed and grouped from the screenshots supplied for the project. Each entry states whether it is available, planned, or awaiting a provider integration.
-- Visitors can read published news and alerts, active hotlines, visible air-quality stations, and bus routes without signing in. The gateway serves only the configured public tenant for these reads; publishing, editing, personal cases, and appointments still require an account.
-- An `admin`-only `/admin` console shows tenant-scoped operational counts and links into the existing management modules. Keycloak continues to manage accounts and realm roles; this console does not store credentials or grant roles.
-- A hotline directory at `/hotlines` lets citizens find active support numbers; `hotlines_operator` or `admin` can add, edit and hide entries. The Android app opens the device dialer rather than placing calls automatically.
-- Search without Vietnamese diacritics, category filters, local favorites, responsive layout and service details.
-- A signed-in citizen creates a field report with optional image and browser location. A `reports_dispatcher` assigns a unit and deadline; the assigned `reports_operator` accepts, posts progress notes, requests a transfer or resolves it. The citizen sees the routing and workflow timeline. Coordinators can filter overdue cases.
-- Citizens and report staff have a map at `/reports/map` with report markers, cluster zoom, status filters, and a list that keeps reports without coordinates visible. Citizens see only their own reports; staff see only those allowed by their unit/role and can also filter by unit and deadline. Selecting a marker or list item opens the existing report detail. The map requires a browser with WebGL; its list remains usable if tiles cannot load.
-- Report staff have an SLA dashboard at `/reports/dashboard` with counts for new, active, resolved, unassigned, due-soon and overdue cases, unit workload and a priority queue. Links open the matching map filter or case. The backend aggregates only reports visible to the current account.
-- Dispatchers can request internal text-based triage suggestions for unit, attention level and similar reports. They choose the final unit and deadline; the dashboard counts accepted and changed unit suggestions.
-- Signed-in users see report notifications, a count of unread items and links to the relevant case. The browser refreshes the count every 30 seconds while open.
-- `surveys_operator` can publish and close tenant-scoped, single-choice surveys. Each account can answer once; the web portal and citizen mobile app show results after an answer or after closure.
-- `bulletins_operator` can publish tenant-scoped news and alerts from the web portal. Citizens read them on web or mobile; alerts with coordinates appear on the mobile map.
-- `appointments_operator` opens citizen reception slots and confirms or rejects requests. Citizens can request an available slot and track or cancel their own appointment. This is a local OpenCity workflow, not an official public-service booking integration.
-- Citizens can submit administrative-procedure feedback and follow staff responses. `administrative_feedback_operator` has its own management page and role; a citizen can request clarification or close an answered case.
-- Business representatives can submit petitions with self-declared company details on the web. `business_feedback_operator` reviews them, requests information and responds; the submitter can provide information, ask for another review or close the case. Tax codes are format-checked, not checked against an official registry.
-- Staff accounts see only their granted management pages. Each page is loaded on demand. The backend enforces the same permissions on every management action.
-- OIDC Authorization Code + PKCE sign-in through the existing `dxos-web` Keycloak client. The browser calls only the OpenCity routes at the DX-OS gateway; it does not orchestrate generic data/workflow APIs. No mock login or privileged client secret is stored in the portal.
+<p>
+  <a href="#gioi-thieu">Giới thiệu</a> &bull;
+  <a href="#tinh-nang">Tính năng Thực tế</a> &bull;
+  <a href="#cong-nghe">Công nghệ</a> &bull;
+  <a href="#cau-truc">Cấu trúc Dự án</a> &bull;
+  <a href="#cai-dat">Cài đặt</a> &bull;
+  <a href="#tai-khoan">Tài khoản Demo</a> &bull;
+  <a href="#thanh-vien">Đội ngũ</a>
+</p>
 
-The other catalog tiles are **not** presented as working services. Integrations with public service, health, transport, payments or official sources require an approved provider URL/API and data access agreement before enabling.
+<p>
+  <img src="https://img.shields.io/badge/License-Apache_2.0-0f172a?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Vite-6.0-646CFF?style=flat-square&logo=vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/MapLibre_GL-6.16-396CB2?style=flat-square" alt="MapLibre GL">
+</p>
 
-The catalog currently has **8 available entries** backed by 7 local routes. News
-and warnings share `/bulletins`; the remaining catalog entries are planned or
-need a provider integration.
+</div>
 
-## Run locally
+---
 
-1. Start the combined `dxos-core` + `opencity-backend` Compose stack according to the OpenCity Backend README. Run `python scripts/smoke.py` in `dxos-core` once to create demo users and register the Keycloak tenant mapper.
-2. In this repository, run:
+## Giới thiệu <a id="gioi-thieu"></a>
+
+**OpenCity Web Portal** là giao diện web phục vụ cả **người dân** và **cán bộ điều hành đô thị**, kết nối tới [OpenCity Backend](https://github.com/HouHackathon-CHP/opencity-backend) thông qua API Gateway và xác thực SSO Keycloak của [DX-OS Core](https://github.com/HouHackathon-CHP/dxos-core).
+
+Ứng dụng tổ chức theo mô hình *service-hub* hiện đại với **60 khái niệm dịch vụ thuộc 12 nhóm danh mục**, trong đó **23 dịch vụ đã kết nối API hoạt động end-to-end**. Dự án sử dụng nhận diện riêng và dữ liệu mở / dữ liệu kiểm thử `[DEMO]`, không gắn nhãn hiệu hay kết nối trực tiếp vào hệ thống nội bộ của cơ quan nhà nước.
+
+---
+
+## Tính năng Thực tế <a id="tinh-nang"></a>
+
+### 1. Cổng Dịch vụ Công dân & Tìm kiếm Thông minh (`/`)
+* **Danh mục 60 dịch vụ đô thị (`services/catalog.json`)**: Tìm kiếm tiếng Việt không dấu, lọc theo 12 nhóm danh mục, đánh dấu yêu thích cục bộ trên trình duyệt.
+* **Truy cập Công khai không cần Đăng nhập**: Khách vãng lai có thể xem ngay tin tức, cảnh báo, đường dây nóng, chất lượng không khí, tuyến xe buýt, bãi đỗ xe, bản đồ 126 xã/phường, du lịch và y tế/giáo dục.
+
+### 2. Hệ thống Bản đồ 2D/3D Tương tác (MapLibre GL JS + OpenStreetMap)
+* **Quan trắc Không khí (`/air-quality`)**: Hiển thị toàn bộ các trạm đo WAQI tại Hà Nội, tự động căn khung bản đồ, biểu đồ lịch sử 24 giờ, phân loại VN-AQI theo QCVN kèm khuyến nghị sức khỏe; cán bộ có nút đồng bộ WAQI tức thì, thêm/sửa/ẩn trạm và phát cảnh báo.
+* **Bản đồ 126 Xã/Phường Hà Nội (`/ward-map`)**: Chuyển đổi linh hoạt góc nhìn **2D / 3D**, tô nổi bật ranh giới đang chọn, tra cứu diện tích, dân số ước tính, trụ sở UBND và đường dây nóng; hỗ trợ modal thêm/sửa thông tin cho cán bộ `digital_ward_operator` / `admin`.
+* **Xe buýt & Bãi đỗ xe (`/bus-search`, `/parking`)**: Tìm tuyến/trạm dừng xe buýt, gợi ý chuyển tuyến kèm lộ trình đi bộ; bản đồ bãi đỗ xe hiển thị đa giác phạm vi 3D, lọc theo sức chứa, phí, 24/7, bảo vệ và chỉ đường OpenStreetMap.
+* **Du lịch, Di tích, Y tế & Giáo dục (`/tourism`, `/heritage`, `/healthcare`, `/education`)**: Tra cứu trực quan trên bản đồ kèm bộ lọc phân loại và thanh phân trang đánh số.
+
+### 3. Phản ánh Hiện trường, SLA Dashboard & Thông báo
+* **Công dân (`/reports`, `/reports/map`)**: Gửi phản ánh kèm ảnh chụp và vị trí GPS, theo dõi tiến trình xử lý chi tiết và bản đồ phân bố phản ánh.
+* **Cán bộ Điều phối & Xử lý (`/reports/dashboard`)**: Thống kê theo thời gian thực hồ sơ mới, đang xử lý, chưa phân công, sắp đến hạn 24 giờ và quá hạn; yêu cầu gợi ý điều phối từ AI Triage; hộp thư thông báo tự làm mới mỗi 30 giây.
+
+### 4. Hành chính Công, Cộng đồng & Quản trị
+* Đặt lịch tiếp công dân (`/appointments`), khảo sát ý kiến (`/surveys`), phản ánh thủ tục hành chính (`/administrative-feedback`), kiến nghị doanh nghiệp (`/business-feedback`), đường dây nóng (`/hotlines`), truyền thông (`/communications`), nhóm cộng đồng (`/community/groups`), phản biện xã hội (`/social-feedback`) và bảng điều khiển `/admin`.
+* **Xác thực OIDC Authorization Code + PKCE**: Hỗ trợ cả **Đăng nhập** và **Đăng ký công dân** trực tiếp qua Keycloak (`dxos-web`), ẩn/hiện trang quản trị dựa trên `GET /me/capabilities`.
+
+---
+
+## Công nghệ Sử dụng <a id="cong-nghe"></a>
+
+| Thành phần | Công nghệ | Vai trò |
+| --- | --- | --- |
+| **Core UI** | React `19` + TypeScript `5.7` + Vite `6` | Giao diện SPA tốc độ cao, kiểm tra kiểu chặt chẽ. |
+| **Routing** | `react-router-dom` `v7` | Điều hướng phân trang và phân quyền theo route (`FeatureRoute`, `AdminRoute`). |
+| **Maps** | `maplibre-gl` `v6.16` | Render bản đồ vector 2D/3D, đa giác ranh giới và marker tương tác. |
+| **Auth** | `oidc-client-ts` `v3.2` | Xác thực OIDC + PKCE S256 trực tiếp với Keycloak. |
+| **Icons** | `lucide-react` | Bộ icon vector nhẹ, đồng bộ toàn giao diện. |
+
+---
+
+## Cấu trúc Dự án <a id="cau-truc"></a>
+
+```text
+opencity-frontend/
+├── services/
+│   └── catalog.json       # Định nghĩa 60 khái niệm dịch vụ thuộc 12 danh mục
+├── scripts/
+│   ├── check-catalog.mjs  # Kiểm tra tính hợp lệ của catalog.json
+│   └── check-licenses.mjs # Kiểm toán giấy phép OSI cho toàn bộ thư viện npm
+├── docs/
+│   ├── service-contract.md
+│   └── license-audit.md
+└── src/
+    ├── components/        # AuthProvider, Shell (header/drawer), Pagination, Logo
+    ├── lib/               # api.ts (Gateway client + JWT headers), catalog.ts, permissions.ts
+    ├── pages/             # 24 trang nghiệp vụ (AirQuality, WardMap, Parking, BusSearch, Reports, Admin...)
+    ├── main.tsx           # Định nghĩa route & khởi tạo ứng dụng
+    └── style.css          # Design system, responsive layout & map styling
+```
+
+---
+
+## Hướng dẫn Cài đặt & Chạy Local <a id="cai-dat"></a>
+
+1. Khởi chạy stack `dxos-core` + `opencity-backend` và chạy `python scripts/smoke.py`, `python scripts/smoke_app.py` theo hướng dẫn của Backend.
+2. Tại thư mục `opencity-frontend`:
 
 ```powershell
 Copy-Item .env.example .env.local
@@ -41,53 +103,64 @@ npm run check:licenses
 npm run dev
 ```
 
-Open <http://localhost:3000>. Use `localhost` for browser sign-in: it is the local origin registered with Keycloak and allowed by the gateway. Visits to `http://127.0.0.1:3000` are redirected there before OIDC begins. The catalog renders without the backend. Authentication and reporting require Keycloak at `http://localhost:8081`, gateway at `http://localhost:8000` and `opencity-backend` on the Compose network. For production, configure a HTTPS origin in this portal, Keycloak's `dxos-web` redirect/web origins, and gateway CORS together.
+Mở **`http://localhost:3000`** *(luôn dùng `localhost`, không dùng `127.0.0.1` để khớp origin OIDC đã đăng ký trên Keycloak `dxos-web` và `CORS_ORIGINS` của Gateway)*.
 
-For role testing, run `python scripts/smoke_app.py` in `opencity-backend`
-after the core smoke script. It provisions the local operator accounts. Passwords
-come from `dxos-core/.env`; do not copy them into frontend configuration.
+* Để tùy chỉnh nguồn tile bản đồ khi build production, cấu hình biến `VITE_MAP_TILE_URL` và chạy `npm run build` để xuất gói tĩnh vào `dist/`.
 
-| Demo account | Password variable | Page to test |
+---
+
+## Tài khoản Kiểm thử theo Vai trò <a id="tai-khoan"></a>
+
+Mật khẩu nằm trong tệp `dxos-core/.env` (không sao chép vào cấu hình frontend):
+
+| Tài khoản | Biến mật khẩu trong `dxos-core/.env` | Trang kiểm thử |
 | --- | --- | --- |
 | `dxos-citizen` | `DEMO_CITIZEN_PASSWORD` | `/reports`, `/reports/map`, `/administrative-feedback`, `/business-feedback`, `/appointments` |
-| `dxos-admin` | `DEMO_ADMIN_PASSWORD` | `/admin` and all management pages |
-| `dxos-dispatcher` | `DEMO_DISPATCHER_PASSWORD` | Dispatch and SLA dashboard at `/reports` |
-| `dxos-reports` | `DEMO_REPORTS_PASSWORD` | Infrastructure reports at `/reports` |
-| `dxos-reports-environment` | `DEMO_REPORTS_ENVIRONMENT_PASSWORD` | Environment reports at `/reports` |
+| `dxos-admin` | `DEMO_ADMIN_PASSWORD` | `/admin` và toàn bộ các trang quản lý |
+| `dxos-dispatcher` | `DEMO_DISPATCHER_PASSWORD` | Điều phối & SLA Dashboard tại `/reports/dashboard` |
+| `dxos-reports` | `DEMO_REPORTS_PASSWORD` | Phản ánh hạ tầng tại `/reports` |
+| `dxos-reports-environment` | `DEMO_REPORTS_ENVIRONMENT_PASSWORD` | Phản ánh môi trường tại `/reports` |
+| `dxos-air-quality` | `DEMO_AIR_QUALITY_PASSWORD` | `/air-quality` (đồng bộ WAQI, quản lý trạm, phát cảnh báo) |
+| `dxos-digital-ward` | `DEMO_DIGITAL_WARD_PASSWORD` | `/digital-wards` và `/ward-map` (chỉnh sửa thông tin xã/phường) |
+| `dxos-bus-search` | `DEMO_BUS_SEARCH_PASSWORD` | `/bus-search` |
 | `dxos-bulletins` | `DEMO_BULLETINS_PASSWORD` | `/bulletins` |
 | `dxos-surveys` | `DEMO_SURVEYS_PASSWORD` | `/surveys` |
 | `dxos-appointments` | `DEMO_APPOINTMENTS_PASSWORD` | `/appointments` |
 | `dxos-administrative-feedback` | `DEMO_ADMINISTRATIVE_FEEDBACK_PASSWORD` | `/administrative-feedback` |
-| `dxos-air-quality` | `DEMO_AIR_QUALITY_PASSWORD` | `/air-quality` |
 | `dxos-business-feedback` | `DEMO_BUSINESS_FEEDBACK_PASSWORD` | `/business-feedback` |
 | `dxos-hotlines` | `DEMO_HOTLINES_PASSWORD` | `/hotlines` |
 | `dxos-communications` | `DEMO_COMMUNICATIONS_PASSWORD` | `/communications` |
 | `dxos-community` | `DEMO_COMMUNITY_PASSWORD` | `/community/groups` |
 | `dxos-social-feedback` | `DEMO_SOCIAL_FEEDBACK_PASSWORD` | `/social-feedback` |
-| `dxos-digital-ward` | `DEMO_DIGITAL_WARD_PASSWORD` | `/digital-wards` |
-| `dxos-bus-search` | `DEMO_BUS_SEARCH_PASSWORD` | `/bus-search` |
 
-Report unit staff see cases only after a dispatcher assigns them. For the
-business petition flow, submit with `dxos-citizen`, then sign in as
-`dxos-business-feedback` to review or request more information; sign in again
-as the citizen to reply. The same pattern applies to administrative feedback
-with its dedicated operator. Sign out and back in after changing roles or
-`unit_id` in Keycloak so the browser receives a fresh access token.
+---
 
-For a varied local map and SLA dashboard, run `python scripts/seed_dashboard_demo.py` once in `opencity-backend`. It is safe to rerun: existing `[DEMO SLA]` reports are reused without resetting deadlines.
+## Thành viên Dự án & Đóng góp <a id="thanh-vien"></a>
 
-`npm run build` creates a static bundle under `dist/`. Business validation and orchestration live in the separate `opencity-backend` repository. Keep the Keycloak and gateway configuration on trusted origins before exposing the system.
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/hieutnago">
+        <img src="https://github.com/hieutnago.png" width="96px" alt="Trương Ngọc Hiểu"/><br>
+        <sub><b>Trương Ngọc Hiểu</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/HouHackathon-CHP">
+        <img src="https://avatars.githubusercontent.com/u/168514215?v=4" width="96px" alt="Trần Trọng Chiến"/><br>
+        <sub><b>Trần Trọng Chiến</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/HouHackathon-CHP">
+        <img src="https://avatars.githubusercontent.com/u/100331812?v=4" width="96px" alt="Nguyễn Hà Phương"/><br>
+        <sub><b>Nguyễn Hà Phương</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
 
-The report map uses MapLibre GL JS and defaults to interactive OpenStreetMap raster tiles. You can set `VITE_MAP_TILE_URL` to a suitable `{z}/{x}/{y}` raster tile endpoint before building. Keep provider attribution visible and use an appropriate tile service for deployment or high traffic. The report API continues to enforce role and tenant access; map filters only narrow the records already returned to this account.
+1. Fork repository và tạo nhánh từ `dev`: `git checkout -b feature/ten-tinh-nang`.
+2. Chạy `npm run check:catalog`, `npm run check:licenses` và `npm run build` trước khi gửi Pull Request.
 
-## Add a service
-
-Edit [`services/catalog.json`](services/catalog.json). Each service needs a unique ID, category, name, description, icon, kind (`native`, `connector`, `link`) and status. Native services become available only after their route is implemented and `status` is set to `available`. External services become available only after a reviewed HTTPS `externalUrl` is supplied. Run `npm run check:catalog` before merging. See [`docs/service-contract.md`](docs/service-contract.md) for the registration contract and boundary between the three DX-OS layers.
-
-## Limitations
-
-The portal is a first implementation slice. Favorites stay in this browser. The backend creates a data record before uploading an image and starting a workflow; if a later step fails, the report remains saved, the UI shows a warning, and the workflow can be retried. Image upload has type/size checks but the core still needs server-side scanning. The current core workflow is a JSON state graph, not BPMN. No official service data or real civic cases are bundled.
-
-## License
-
-Apache-2.0. Dependency license metadata is checked by `npm run check:licenses`; see [`docs/license-audit.md`](docs/license-audit.md). The audit does not cover external services that may later be connected.
+Phát hành theo giấy phép **Apache License 2.0** — xem [LICENSE](LICENSE), [docs/license-audit.md](docs/license-audit.md) và [CHANGELOG.md](CHANGELOG.md).
